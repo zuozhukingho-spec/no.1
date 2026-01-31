@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HKPC ICT内部考核系统 V12.0</title>
+    <title>HKPC ICT内部考核系统 V16.0</title>
     <style>
         :root {
+            /* 游戏主色调 */
             --primary-blue: #0a2463;
             --accent-gold: #fb8b24;
             --bg-light: #f0f2f5;
@@ -112,6 +113,34 @@
         .feedback { margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #ccc; }
         .fail-text { color: var(--alert-red); font-size: 1.2rem; font-weight: bold; }
 
+        /* --- 加载层样式 (V16.0 新增) --- */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10002; /* 最高层级 */
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a73e8; /* Google Blue */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* --- 1:1 复刻 Google 登录页样式 --- */
         #phishing-overlay {
             position: fixed;
@@ -185,7 +214,13 @@
         .g-link:hover { background: #f0f4f8; border-radius: 4px; }
         .g-guest-info { margin-top: 40px; font-size: 14px; color: #444746; line-height: 1.4; }
         .g-actions { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 40px; }
-        .g-btn-create { color: #0b57d0; background: transparent; border: none; font-weight: 500; font-size: 14px; cursor: pointer; padding: 10px 0; }
+        
+        /* 链接按钮样式 */
+        .g-btn-create { 
+            color: #0b57d0; background: transparent; border: none; 
+            font-weight: 500; font-size: 14px; cursor: pointer; 
+            padding: 10px 0; text-decoration: none;
+        }
         
         .g-btn-next {
             background-color: #0b57d0; color: white; border: none;
@@ -194,8 +229,66 @@
         }
         .g-btn-next:hover { background-color: #0a46a8; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
-        .g-footer { margin-top: 24px; width: 1040px; max-width: 90%; display: flex; justify-content: space-between; font-size: 12px; color: #444746; }
-        .g-footer-links span { margin-left: 20px; cursor: pointer; }
+        /* --- 底部语言选择器 --- */
+        .g-footer { 
+            margin-top: 24px; 
+            width: 1040px; 
+            max-width: 90%; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            font-size: 12px; 
+            color: #444746; 
+        }
+
+        .g-lang-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .g-lang-btn {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #444746;
+            background: transparent;
+        }
+        .g-lang-btn:hover { background-color: #e0e5ec; }
+
+        .g-lang-menu {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px 0 rgba(60,64,67,.3);
+            width: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 10001;
+            padding: 8px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .g-lang-item {
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #3c4043;
+            cursor: pointer;
+            line-height: 1.5;
+        }
+        .g-lang-item:hover { background-color: #f5f5f5; }
+        .g-lang-item.selected { background-color: #e8f0fe; color: #0b57d0; }
+
+        .g-lang-menu::-webkit-scrollbar { width: 8px; }
+        .g-lang-menu::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; border: 2px solid white; }
+        
+        .g-footer-links span { margin-left: 20px; cursor: pointer; border-radius: 4px; padding: 6px; }
+        .g-footer-links span:hover { background-color: #f0f4f8; }
 
         .g-email-chip {
             display: inline-flex; align-items: center; border: 1px solid #747775;
@@ -282,7 +375,7 @@
             <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <p><strong>考核流程简报：</strong></p>
                 <ol>
-                    <li><strong>基础复训</strong>：10道基础题。</li>
+                    <li><strong>基础复训</strong>：8道基础题。</li>
                     <li><strong>实战考核</strong>：6道高阶题，<strong style="color:red">30秒限时</strong>。</li>
                 </ol>
             </div>
@@ -291,7 +384,7 @@
 
         <div id="screen-training" class="hidden">
             <span class="phase-badge badge-training">阶段一：基础复训</span>
-            <span id="train-progress" style="float: right; color: #888;">1/10</span>
+            <span id="train-progress" style="float: right; color: #888;">1/8</span>
             <h3 id="train-q-text">加载中...</h3>
             <div id="train-options"></div>
             <div id="train-feedback" class="feedback hidden">
@@ -340,6 +433,10 @@
 
     </div>
 
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+    </div>
+
     <div id="phishing-overlay" class="hidden">
         <div id="phishing-step-1" class="g-card-container">
             <div class="g-left-col">
@@ -356,10 +453,12 @@
                         <span id="email-error-text">请输入有效的电子邮件地址</span>
                     </div>
                 </div>
-                <div><a class="g-link">忘记了邮箱？</a></div>
-                <div class="g-guest-info">您的不是自己的电脑？请使用访客模式无痕登录。<a class="g-link" style="display:inline; margin:0;">了解如何使用访客模式</a></div>
+                <div><a class="g-link" href="https://accounts.google.com/signin/v2/usernamerecovery?authuser=0&continue=http%3A%2F%2Fsupport.google.com%2Fgemini%2Fanswer%2F13278668%3Fvisit_id%3D639054543728845134-3939157022%26p%3Dno_access%26rd%3D1&dsh=S-1777165485%3A1769870140289059&ec=GAlAdQ&flowEntry=AddSession&flowName=GlifWebSignIn&hl=zh-CN" target="_blank">忘记了邮箱？</a></div>
+                
+                <div class="g-guest-info">您的不是自己的电脑？请使用访客模式无痕登录。<a class="g-link" style="display:inline; margin:0;" href="https://support.google.com/chrome/answer/6130773?hl=zh" target="_blank">了解如何使用访客模式</a></div>
+                
                 <div class="g-actions">
-                    <button class="g-btn-create">创建账号</button>
+                    <a class="g-btn-create" href="https://accounts.google.com/lifecycle/steps/signup/name?authuser=0&continue=http://support.google.com/gemini/answer/13278668?visit_id%3D639054543728845134-3939157022%26p%3Dno_access%26rd%3D1&dsh=S-1777165485:1769870140289059&ec=GAlAdQ&flowEntry=SignUp&flowName=GlifWebSignIn&hl=zh-CN&TL=APgKAcbIGGCKoCitu9ZZtjqJLxCkXsp-eCIejOIwgYcW_Fgv41ai8dh6wekV2LZo" target="_blank">创建账号</a>
                     <button class="g-btn-next" id="btn-phish-next-1">下一步</button>
                 </div>
             </div>
@@ -391,8 +490,31 @@
                 </div>
             </div>
         </div>
+        
         <div class="g-footer">
-            <div>简体中文 ▼</div>
+            <div class="g-lang-wrapper" id="lang-selector">
+                <div class="g-lang-btn">
+                    <span id="current-lang">简体中文</span>
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="rgba(0,0,0,0.54)"><path d="M7 10l5 5 5-5z"></path></svg>
+                </div>
+                <div class="g-lang-menu hidden" id="lang-menu">
+                    <div class="g-lang-item">繁體中文</div>
+                    <div class="g-lang-item selected">简体中文</div>
+                    <div class="g-lang-item">日本語</div>
+                    <div class="g-lang-item">中文 (香港)</div>
+                    <div class="g-lang-item">Afrikaans</div>
+                    <div class="g-lang-item">azərbaycan</div>
+                    <div class="g-lang-item">bosanski</div>
+                    <div class="g-lang-item">català</div>
+                    <div class="g-lang-item">Čeština</div>
+                    <div class="g-lang-item">Dansk</div>
+                    <div class="g-lang-item">Deutsch</div>
+                    <div class="g-lang-item">eesti</div>
+                    <div class="g-lang-item">English (United Kingdom)</div>
+                    <div class="g-lang-item">English (United States)</div>
+                    <div class="g-lang-item">Español (España)</div>
+                </div>
+            </div>
             <div class="g-footer-links"><span>帮助</span><span>隐私权</span><span>条款</span></div>
         </div>
     </div>
@@ -417,18 +539,57 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ... 题库数据 ...
+            // --- 题库更新 V13.0 ---
+            // 共8题，按照用户要求定制
             const trainingQuestions = [
-                { q: "收到老板邮件要求立刻转账，发件人是 ceo@gmai1.com？", options: ["立即转账", "汇报上级并核实", "回复询问", "无视"], a: 1, info: "典型钓鱼，注意域名 gmai1.com。" },
-                { q: "强密码的特征？", options: ["生日", "123456", "大小写数字符号组合", "公司名"], a: 2, info: "增加了暴力破解的难度。" },
-                { q: "勒索软件的主要危害？", options: ["偷电", "加密文件索要赎金", "烧毁CPU", "弹广告"], a: 1, info: "Ransomware 核心是加密。" },
-                { q: "在机场使用免费WiFi处理机密文件？", options: ["可以", "使用VPN或热点", "很安全", "没关系"], a: 1, info: "公共WiFi易遭受中间人攻击。" },
-                { q: "收到带宏的 Word 文档附件？", options: ["启用宏", "直接删除", "沙箱打开/谨慎对待", "转发给同事"], a: 2, info: "Office 宏是病毒常见载体。" },
-                { q: "2FA 是什么？", options: ["两个账号", "两次点击", "双重因素认证", "两人备份"], a: 2, info: "密码 + 验证码。" },
-                { q: "电脑突然运行极慢且风扇狂转？", options: ["可能是挖矿病毒", "没电了", "正常现象", "需要休息"], a: 0, info: "资源被恶意占用。" },
-                { q: "捡到印有 '工资表' 的 U盘？", options: ["插入公司电脑看", "插家里电脑", "上交安全部", "扔垃圾桶"], a: 2, info: "摆渡攻击诱饵。" },
-                { q: "URL显示 http://bank-secure-login.com？", options: ["安全", "不安全(HTTP)", "官方网站", "加密连接"], a: 1, info: "没有 HTTPS，数据明文传输。" },
-                { q: "社交工程学攻击的是？", options: ["防火墙", "人性弱点", "服务器漏洞", "电网"], a: 1, info: "人是安全链中最薄弱的一环。" }
+                { 
+                    q: "收到老板邮件要求立刻转账，发件人是 ceo@gmai1.com怎么办？", 
+                    options: ["立即转账", "拉入黑名单并举报为垃圾邮件", "回复询问确认", "转发给同事"], 
+                    a: 1, 
+                    info: "发件人域名 gmai1.com 是典型的钓鱼欺诈，应立即拉黑举报。" 
+                },
+                { 
+                    q: "强密码的特征？", 
+                    options: ["生日", "123456", "大小写数字符号组合", "公司名"], 
+                    a: 2, 
+                    info: "强密码应包含大小写、数字及符号且无规律，增加了暴力破解的难度。" 
+                },
+                { 
+                    q: "勒索软件的主要危害？", 
+                    options: ["偷电", "加密文件索要赎金", "烧毁CPU", "弹广告"], 
+                    a: 1, 
+                    info: "勒索软件（Ransomware）的核心目的是加密用户数据以索要赎金。" 
+                },
+                { 
+                    q: "在机场使用免费WiFi处理机密文件怎么办？", 
+                    options: ["可以", "使用VPN或热点", "很安全", "没关系"], 
+                    a: 1, 
+                    info: "公共免费WiFi极易遭受中间人攻击，应使用加密的VPN或手机热点。" 
+                },
+                { 
+                    q: "2FA 是什么？", 
+                    options: ["两个账号", "两次点击", "双重因素认证", "两人备份"], 
+                    a: 2, 
+                    info: "2FA (Two-Factor Authentication) 即双重认证，如密码+手机验证码。" 
+                },
+                { 
+                    q: "电脑突然运行极慢且风扇狂转是什么情况？", 
+                    options: ["可能是挖矿病毒", "没电了", "正常现象", "需要休息"], 
+                    a: 0, 
+                    info: "系统资源（CPU/GPU）被恶意软件占用进行挖矿计算会导致风扇狂转。" 
+                },
+                { 
+                    q: "捡到印有 '工资表' 的 U盘怎么处理？", 
+                    options: ["插入公司电脑确认失主", "带回家使用", "直接丢掉或物理破坏", "格式化后自用"], 
+                    a: 2, 
+                    info: "来路不明的存储设备可能含有恶意摆渡程序，物理销毁是最安全的做法。" 
+                },
+                { 
+                    q: "社交工程学攻击的是？", 
+                    options: ["防火墙", "人性弱点", "服务器漏洞", "电网"], 
+                    a: 1, 
+                    info: "社会工程学利用人的信任、恐惧或贪婪等弱点进行攻击，而非直接攻击技术漏洞。" 
+                }
             ];
 
             const examQuestionsMaster = [
@@ -472,6 +633,8 @@
                 phishingOverlay: document.getElementById('phishing-overlay'),
                 mainContainer: document.getElementById('main-container'),
                 mainHeader: document.getElementById('main-header'),
+                // 加载层
+                loadingOverlay: document.getElementById('loading-overlay'),
                 // 钓鱼相关
                 phishStep1: document.getElementById('phishing-step-1'),
                 phishStep2: document.getElementById('phishing-step-2'),
@@ -484,6 +647,10 @@
                 // 密码相关
                 inputPassword: document.getElementById('input-password'),
                 checkboxShowPass: document.getElementById('checkbox-show-pass'),
+                // 语言选择器
+                langSelector: document.getElementById('lang-selector'),
+                langMenu: document.getElementById('lang-menu'),
+                currentLangSpan: document.getElementById('current-lang'),
                 // 勒索相关
                 ransomOverlay: document.getElementById('ransom-overlay'),
                 ransomEmailDisplay: document.getElementById('ransom-email-display'),
@@ -511,7 +678,7 @@
             document.getElementById('btn-start-exam').addEventListener('click', startExamPhase);
             document.getElementById('btn-retry-exam').addEventListener('click', startExamPhase);
             
-            // 陷阱事件
+            // 陷阱事件 (Modified for loading delay)
             document.getElementById('btn-bait').addEventListener('click', triggerPhishing);
             document.getElementById('btn-phish-next-1').addEventListener('click', phishGoToPassword);
             document.getElementById('btn-phish-next-2').addEventListener('click', endPhishing);
@@ -519,6 +686,28 @@
             // 密码显示切换事件
             els.checkboxShowPass.addEventListener('change', function() {
                 els.inputPassword.type = this.checked ? 'text' : 'password';
+            });
+
+            // 语言选择器事件
+            els.langSelector.addEventListener('click', function(e) {
+                e.stopPropagation(); 
+                els.langMenu.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', function() {
+                if (!els.langMenu.classList.contains('hidden')) {
+                    els.langMenu.classList.add('hidden');
+                }
+            });
+
+            document.querySelectorAll('.g-lang-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation(); 
+                    document.querySelectorAll('.g-lang-item').forEach(i => i.classList.remove('selected'));
+                    this.classList.add('selected');
+                    els.currentLangSpan.innerText = this.innerText;
+                    els.langMenu.classList.add('hidden');
+                });
             });
 
             // 辅助函数
@@ -540,7 +729,7 @@
             function loadTrainingQuestion() {
                 const q = trainingQuestions[currentTrainIdx];
                 els.trainQ.innerText = `${currentTrainIdx + 1}. ${q.q}`;
-                document.getElementById('train-progress').innerText = `${currentTrainIdx + 1}/10`;
+                document.getElementById('train-progress').innerText = `${currentTrainIdx + 1}/${trainingQuestions.length}`;
                 els.trainOpts.innerHTML = '';
                 els.trainFeedback.classList.add('hidden');
                 q.options.forEach((opt, idx) => {
@@ -635,25 +824,31 @@
                 switchScreen('success');
             }
 
-            // --- 钓鱼逻辑 ---
+            // --- 钓鱼逻辑 (V16.0 增加加载延迟) ---
             function triggerPhishing() {
-                // 确保所有之前音乐停止
+                // 1. 停止所有背景音乐
                 els.bgmRelaxing.pause();
                 els.bgmBattle.pause();
 
+                // 2. 隐藏主界面，显示加载层
                 els.mainContainer.style.display = 'none';
                 els.mainHeader.style.display = 'none';
-                els.phishingOverlay.classList.remove('hidden');
-                
-                // 重置状态
+                els.loadingOverlay.classList.remove('hidden');
+
+                // 3. 重置钓鱼页状态
                 els.phishStep1.classList.remove('hidden');
                 els.phishStep2.classList.add('hidden');
                 els.inputEmail.value = '';
                 els.inputPassword.value = '';
                 els.inputPassword.type = 'password';
                 els.checkboxShowPass.checked = false;
-                
                 resetEmailError();
+
+                // 4. 设置3秒延迟后显示钓鱼页
+                setTimeout(() => {
+                    els.loadingOverlay.classList.add('hidden');
+                    els.phishingOverlay.classList.remove('hidden');
+                }, 3000);
             }
 
             function resetEmailError() {
@@ -684,7 +879,7 @@
             }
 
             function endPhishing() {
-                // 1. 停止所有其他音乐 (Just in case)
+                // 1. 停止所有其他音乐
                 els.bgmRelaxing.pause();
                 els.bgmBattle.pause();
 
@@ -693,11 +888,11 @@
                 els.mainContainer.style.display = 'none';
                 els.mainHeader.style.display = 'none';
 
-                // 3. 填入数据 (Email & Password)
+                // 3. 填入数据
                 els.ransomEmailDisplay.innerText = els.inputEmail.value;
                 els.ransomPasswordDisplay.innerText = els.inputPassword.value;
 
-                // 4. 显示勒索页面
+                // 4. 显示红色勒索页面
                 els.ransomOverlay.classList.remove('hidden');
 
                 // 5. 播放 Rickroll
