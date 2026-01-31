@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HKPC ICT内部考核系统 V12.0</title>
+    <style>
+        :root {
+            --primary-blue: #0a2463;
+            --accent-gold: #fb8b24;
+            --bg-light: #f0f2f5;
+            --text-dark: #1f1f1f;
+            --alert-red: #d00000;
+            --success-green: #2a9d8f;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-dark);
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        /* --- 游戏界面样式 --- */
+        header {
+            width: 100%;
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 2px; }
+        header p { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.8; }
+
+        .container {
+            width: 800px;
+            max-width: 95%;
+            background: white;
+            margin-top: 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+            padding: 40px;
+            min-height: 400px;
+            transition: opacity 0.3s;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .badge-training { background: #e3f2fd; color: var(--primary-blue); }
+        .badge-exam { background: #ffebee; color: var(--alert-red); border: 1px solid var(--alert-red); }
+
+        .btn {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 20px;
+            display: inline-block;
+        }
+        .btn:hover { background-color: #051b4d; transform: translateY(-1px); }
+        
+        .btn-option {
+            width: 100%;
+            text-align: left;
+            background: white;
+            border: 2px solid #e0e0e0;
+            color: var(--text-dark);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .btn-option:hover:not([disabled]) {
+            border-color: var(--primary-blue);
+            background-color: #f8fbff;
+        }
+
+        .timer-container {
+            height: 10px;
+            background: #eee;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            z-index: 10;
+        }
+        .timer-bar { height: 100%; background: var(--alert-red); width: 100%; transition: width 0.1s linear; }
+
+        .hidden { display: none !important; }
+        .feedback { margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #ccc; }
+        .fail-text { color: var(--alert-red); font-size: 1.2rem; font-weight: bold; }
+
+        /* --- 1:1 复刻 Google 登录页样式 --- */
+        #phishing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-family: 'Roboto', arial, sans-serif;
+        }
+
+        .g-card-container {
+            background: white;
+            border-radius: 28px;
+            padding: 48px 40px 36px;
+            width: 1040px;
+            max-width: 90%;
+            height: auto;
+            min-height: 400px;
+            display: flex;
+            flex-direction: row;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 850px) {
+            .g-card-container {
+                flex-direction: column;
+                width: 450px;
+                padding: 24px;
+            }
+            .g-left-col { padding-right: 0 !important; margin-bottom: 20px; }
+            .g-right-col { padding-left: 0 !important; }
+        }
+
+        .g-left-col { flex: 1; padding-right: 40px; display: flex; flex-direction: column; }
+        .g-right-col { flex: 1; display: flex; flex-direction: column; }
+        .g-logo { width: 48px; height: 48px; margin-bottom: 16px; }
+        .g-title { color: #1f1f1f; font-size: 2.25rem; font-weight: 400; margin: 0 0 16px 0; line-height: 1.2; }
+        .g-subtitle { font-size: 1rem; line-height: 1.5; color: #1f1f1f; margin: 0; }
+
+        .g-input-wrapper { margin-top: 20px; position: relative; margin-bottom: 8px; }
+
+        .g-input {
+            width: 100%; padding: 13px 15px; height: 56px;
+            border: 1px solid #747775; border-radius: 4px;
+            font-size: 16px; box-sizing: border-box; color: #1f1f1f;
+            outline: none; transition: 0.2s;
+        }
+        .g-input:focus { border: 2px solid #0b57d0; padding: 13px 14px; }
+        .g-input::-ms-reveal, .g-input::-ms-clear { display: none; }
+        
+        .g-input-error { border-color: #d93025 !important; }
+        .g-input-error:focus { border-color: #d93025 !important; }
+        
+        .g-label-float {
+            position: absolute; top: -10px; left: 12px;
+            background: white; padding: 0 4px;
+            color: #1f1f1f; font-size: 12px; font-weight: 400;
+        }
+        .g-input:focus ~ .g-label-float { color: #0b57d0; font-weight: 500; }
+        .g-label-error { color: #d93025 !important; }
+        .g-error-msg { display: flex; align-items: center; color: #d93025; font-size: 12px; margin-top: 6px; line-height: 1.2; }
+        .g-error-msg svg { margin-right: 8px; flex-shrink: 0; }
+
+        .g-link { color: #0b57d0; font-weight: 500; font-size: 14px; text-decoration: none; cursor: pointer; margin-top: 8px; display: inline-block; }
+        .g-link:hover { background: #f0f4f8; border-radius: 4px; }
+        .g-guest-info { margin-top: 40px; font-size: 14px; color: #444746; line-height: 1.4; }
+        .g-actions { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 40px; }
+        .g-btn-create { color: #0b57d0; background: transparent; border: none; font-weight: 500; font-size: 14px; cursor: pointer; padding: 10px 0; }
+        
+        .g-btn-next {
+            background-color: #0b57d0; color: white; border: none;
+            padding: 0 24px; height: 40px; border-radius: 20px;
+            font-weight: 500; font-size: 14px; cursor: pointer;
+        }
+        .g-btn-next:hover { background-color: #0a46a8; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
+        .g-footer { margin-top: 24px; width: 1040px; max-width: 90%; display: flex; justify-content: space-between; font-size: 12px; color: #444746; }
+        .g-footer-links span { margin-left: 20px; cursor: pointer; }
+
+        .g-email-chip {
+            display: inline-flex; align-items: center; border: 1px solid #747775;
+            border-radius: 18px; padding: 2px 10px 2px 4px; margin-top: 0;
+            cursor: pointer; font-size: 14px; color: #1f1f1f; max-width: fit-content;
+        }
+        .g-chip-icon { margin-right: 8px; color: #444746; }
+        .g-chip-arrow { margin-left: 8px; color: #444746; }
+        .g-password-prompt { font-size: 16px; color: #1f1f1f; margin-bottom: 20px; margin-top: 10px; }
+        .g-checkbox-wrapper { margin-top: 10px; display: flex; align-items: center; font-size: 14px; color: #1f1f1f; }
+        .g-checkbox { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; accent-color: #0b57d0; }
+        .g-checkbox-label { cursor: pointer; }
+
+        /* --- 勒索页面专用样式 --- */
+        #ransom-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #5e0000 0%, #000000 100%);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10000;
+            color: #ff3333;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+        }
+        
+        .ransom-box {
+            border: 4px solid red;
+            background: rgba(0,0,0,0.8);
+            padding: 40px;
+            max-width: 800px;
+            box-shadow: 0 0 50px red;
+            animation: pulse 2s infinite;
+        }
+
+        .ransom-icon { font-size: 80px; margin-bottom: 20px; }
+        .ransom-text { font-size: 1.2rem; line-height: 1.6; color: #fff; margin-bottom: 20px; text-align: left; }
+        .highlight-data { color: #ffff00; font-weight: bold; background: #333; padding: 2px 5px; }
+        
+        .ransom-title-big {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ff0000;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            margin-top: 40px;
+            letter-spacing: 5px;
+            border-top: 2px dashed red;
+            padding-top: 20px;
+            display: inline-block;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 30px #5e0000; border-color: #800000; }
+            50% { box-shadow: 0 0 60px #ff0000; border-color: #ff0000; }
+            100% { box-shadow: 0 0 30px #5e0000; border-color: #800000; }
+        }
+
+    </style>
+</head>
+<body>
+    
+    <audio id="bgm-relaxing" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3" type="audio/mp3">
+    </audio>
+
+    <audio id="bgm-battle" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/22/audio_c39b1d7026.mp3?filename=action-cyberpunk-11270.mp3" type="audio/mp3">
+    </audio>
+
+    <audio id="bgm-rickroll" loop>
+        <source src="https://ia801602.us.archive.org/11/items/Rick_Astley_Never_Gonna_Give_You_Up/Rick_Astley_Never_Gonna_Give_You_Up.mp3" type="audio/mp3">
+    </audio>
+
+    <header id="main-header">
+        <h1>HKPC ICT网络防御培训</h1>
+        <p>PERSONNEL TRAINING & ASSESSMENT SYSTEM</p>
+    </header>
+
+    <div class="container" id="main-container">
+        <div id="timer-box" class="timer-container"><div id="timer-bar" class="timer-bar"></div></div>
+
+        <div id="screen-welcome">
+            <h2>>>> 身份验证通过</h2>
+            <p>欢迎归队，特工。</p>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>考核流程简报：</strong></p>
+                <ol>
+                    <li><strong>基础复训</strong>：10道基础题。</li>
+                    <li><strong>实战考核</strong>：6道高阶题，<strong style="color:red">30秒限时</strong>。</li>
+                </ol>
+            </div>
+            <button id="btn-start-training" class="btn">开始基础复训</button>
+        </div>
+
+        <div id="screen-training" class="hidden">
+            <span class="phase-badge badge-training">阶段一：基础复训</span>
+            <span id="train-progress" style="float: right; color: #888;">1/10</span>
+            <h3 id="train-q-text">加载中...</h3>
+            <div id="train-options"></div>
+            <div id="train-feedback" class="feedback hidden">
+                <p id="train-feedback-text"></p>
+                <button id="btn-next-training" class="btn">下一题</button>
+            </div>
+        </div>
+
+        <div id="screen-transition" class="hidden" style="text-align: center;">
+            <div style="font-size: 4rem; color: var(--success-green); margin-bottom: 20px;">✓</div>
+            <h2>基础复训完成</h2>
+            <div style="background: #ffebee; border: 1px solid var(--alert-red); padding: 15px; margin: 20px 0; color: var(--alert-red);">
+                <strong>⚠ 极速挑战模式 ⚠</strong><br>30秒 | 6道题 | 0容错
+            </div>
+            <button id="btn-start-exam" class="btn" style="background-color: var(--alert-red);">启动实战考核</button>
+        </div>
+
+        <div id="screen-exam" class="hidden">
+            <span class="phase-badge badge-exam">阶段二：实战考核 (Live)</span>
+            <span id="exam-timer-text" style="float: right; color: var(--alert-red); font-weight:bold; font-size: 1.5rem;">30.0s</span>
+            <h3 id="exam-q-text">问题...</h3>
+            <div id="exam-options"></div>
+        </div>
+
+        <div id="screen-fail" class="hidden" style="text-align: center;">
+            <div style="font-size: 4rem; color: var(--alert-red); margin-bottom: 20px;">✕</div>
+            <h2 style="color: var(--alert-red);">行动失败</h2>
+            <p class="fail-text" id="fail-reason">判断失误。</p>
+            <button id="btn-retry-exam" class="btn">重新请求考核</button>
+        </div>
+
+        <div id="screen-success" class="hidden" style="text-align: center;">
+            <div style="font-size: 4rem; color: var(--accent-gold); margin-bottom: 20px;">★</div>
+            <h2>考核通过 (Certified)</h2>
+            <p>恭喜，您已具备高级特工资质。</p>
+            <div style="margin-top: 20px; padding: 20px; border: 2px dashed var(--primary-blue); display: inline-block;">
+                NCBA AUTHENTICATED<br>Status: CLEARED
+            </div>
+            <br><br><hr style="border:0; border-top:1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 0.9rem;">检测到您的成绩已进入 <strong>全球前 1%</strong>。</p>
+            <button id="btn-bait" class="btn" style="background-color: white; color: #555; border: 1px solid #ccc; display: inline-flex; align-items: center; gap: 10px;">
+                <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 8.706l-3.007-2.332A8.997 8.997 0 0 1 9 0c2.43 0 4.467.806 5.956 2.18L12.87 4.32C11.83 3.34 10.51 2.8 9 2.8c-2.344 0-4.328 1.584-5.036 3.715l3.007 2.332c.164-.51.4-1.02.73-1.48L3.964 8.706z" fill="#FBBC05"/><path d="M3.964 8.706c-.164.51-.254 1.05-.254 1.62s.09 1.11.254 1.62l-3.007 2.332C.342 12.86.09 11.45.09 10s.252-2.86.867-4.276l3.007 2.332z" fill="#EA4335"/></svg>
+                Sign in with Google to View Leaderboard
+            </button>
+        </div>
+
+    </div>
+
+    <div id="phishing-overlay" class="hidden">
+        <div id="phishing-step-1" class="g-card-container">
+            <div class="g-left-col">
+                <svg class="g-logo" viewBox="0 0 48 48" width="48" height="48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
+                <h1 class="g-title">登录</h1>
+                <p class="g-subtitle">请使用您的 Google 账号登录。该浏览器中的其他 Google 应用都将可以访问此账号。</p>
+            </div>
+            <div class="g-right-col">
+                <div class="g-input-wrapper">
+                    <span class="g-label-float" id="g-email-label">邮箱或电话号码</span>
+                    <input type="text" id="input-email" class="g-input" autofocus>
+                    <div id="email-error-msg" class="g-error-msg hidden">
+                        <svg aria-hidden="true" fill="currentColor" width="16px" height="16px" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg>
+                        <span id="email-error-text">请输入有效的电子邮件地址</span>
+                    </div>
+                </div>
+                <div><a class="g-link">忘记了邮箱？</a></div>
+                <div class="g-guest-info">您的不是自己的电脑？请使用访客模式无痕登录。<a class="g-link" style="display:inline; margin:0;">了解如何使用访客模式</a></div>
+                <div class="g-actions">
+                    <button class="g-btn-create">创建账号</button>
+                    <button class="g-btn-next" id="btn-phish-next-1">下一步</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="phishing-step-2" class="g-card-container hidden">
+            <div class="g-left-col">
+                <svg class="g-logo" viewBox="0 0 48 48" width="48" height="48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
+                <h1 class="g-title">欢迎</h1>
+                <div class="g-email-chip">
+                    <svg class="g-chip-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                    <span id="display-email-text">user@example.com</span>
+                    <svg class="g-chip-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+                </div>
+            </div>
+            <div class="g-right-col">
+                <p class="g-password-prompt">如需继续操作，请先验证您的身份</p>
+                <div class="g-input-wrapper">
+                    <span class="g-label-float">输入您的密码</span>
+                    <input type="password" id="input-password" class="g-input" autofocus>
+                </div>
+                <div class="g-checkbox-wrapper">
+                    <input type="checkbox" class="g-checkbox" id="checkbox-show-pass"> 
+                    <label for="checkbox-show-pass" class="g-checkbox-label">显示密码</label>
+                </div>
+                <div class="g-actions">
+                    <a class="g-link" style="margin-top:0;">忘记了密码?</a>
+                    <button class="g-btn-next" id="btn-phish-next-2">下一步</button>
+                </div>
+            </div>
+        </div>
+        <div class="g-footer">
+            <div>简体中文 ▼</div>
+            <div class="g-footer-links"><span>帮助</span><span>隐私权</span><span>条款</span></div>
+        </div>
+    </div>
+
+    <div id="ransom-overlay" class="hidden">
+        <div class="ransom-box">
+            <div class="ransom-icon">⚠️💀⚠️</div>
+            <h1 style="color:red; margin-bottom: 10px;">SYSTEM COMPROMISED</h1>
+            <h2 style="color: white; margin-bottom: 30px; border-bottom: 1px solid red; padding-bottom: 10px;">你没有通过考核</h2>
+            
+            <div class="ransom-text">
+                <p>这里没有任何的排行榜，你被骗了。</p>
+                <p>但幸运的是（对我也许是），这个网站有连接伺服器，所以我能看到你输入的邮件：<br>
+                <span id="ransom-email-display" class="highlight-data"></span></p>
+                <p>以及你的账号密码：<span id="ransom-password-display" class="highlight-data"></span></p>
+                <p>所以，如果你不想你的账号昭告天下，请在 <strong>WhatsApp群</strong> 中夸赞这个游戏。</p>
+            </div>
+
+            <div class="ransom-title-big">《这不是勒索》</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... 题库数据 ...
+            const trainingQuestions = [
+                { q: "收到老板邮件要求立刻转账，发件人是 ceo@gmai1.com？", options: ["立即转账", "汇报上级并核实", "回复询问", "无视"], a: 1, info: "典型钓鱼，注意域名 gmai1.com。" },
+                { q: "强密码的特征？", options: ["生日", "123456", "大小写数字符号组合", "公司名"], a: 2, info: "增加了暴力破解的难度。" },
+                { q: "勒索软件的主要危害？", options: ["偷电", "加密文件索要赎金", "烧毁CPU", "弹广告"], a: 1, info: "Ransomware 核心是加密。" },
+                { q: "在机场使用免费WiFi处理机密文件？", options: ["可以", "使用VPN或热点", "很安全", "没关系"], a: 1, info: "公共WiFi易遭受中间人攻击。" },
+                { q: "收到带宏的 Word 文档附件？", options: ["启用宏", "直接删除", "沙箱打开/谨慎对待", "转发给同事"], a: 2, info: "Office 宏是病毒常见载体。" },
+                { q: "2FA 是什么？", options: ["两个账号", "两次点击", "双重因素认证", "两人备份"], a: 2, info: "密码 + 验证码。" },
+                { q: "电脑突然运行极慢且风扇狂转？", options: ["可能是挖矿病毒", "没电了", "正常现象", "需要休息"], a: 0, info: "资源被恶意占用。" },
+                { q: "捡到印有 '工资表' 的 U盘？", options: ["插入公司电脑看", "插家里电脑", "上交安全部", "扔垃圾桶"], a: 2, info: "摆渡攻击诱饵。" },
+                { q: "URL显示 http://bank-secure-login.com？", options: ["安全", "不安全(HTTP)", "官方网站", "加密连接"], a: 1, info: "没有 HTTPS，数据明文传输。" },
+                { q: "社交工程学攻击的是？", options: ["防火墙", "人性弱点", "服务器漏洞", "电网"], a: 1, info: "人是安全链中最薄弱的一环。" }
+            ];
+
+            const examQuestionsMaster = [
+                { q: "RDP 暴破针对端口？", options: ["21", "80", "443", "3389"], a: 3 },
+                { q: "APT 特征？", options: ["随机攻击", "持续性针对性", "立刻见效", "单一手段"], a: 1 },
+                { q: "Zero-day 定义？", options: ["0天后修复", "未公开/无补丁漏洞", "简单的漏洞", "过期漏洞"], a: 1 },
+                { q: "供应链攻击？", options: ["直接打目标", "打目标的供应商", "断电", "物理入侵"], a: 1 },
+                { q: "Air-gapped 物理隔离？", options: ["绝对安全", "防网络攻击不防摆渡", "不仅防毒还防水", "无需维护"], a: 1 },
+                { q: "SQL 注入攻击的是？", options: ["数据库", "CPU", "显示器", "键盘"], a: 0 }
+            ];
+
+            // 状态变量
+            let currentTrainIdx = 0;
+            let currentExamIdx = 0;
+            let currentExamSet = [];
+            let examTimer = null;
+            let timeLeft = 30;
+            const TOTAL_TIME = 30;
+
+            // DOM 引用
+            const screens = {
+                welcome: document.getElementById('screen-welcome'),
+                training: document.getElementById('screen-training'),
+                transition: document.getElementById('screen-transition'),
+                exam: document.getElementById('screen-exam'),
+                fail: document.getElementById('screen-fail'),
+                success: document.getElementById('screen-success'),
+            };
+
+            const els = {
+                timerBox: document.getElementById('timer-box'),
+                timerBar: document.getElementById('timer-bar'),
+                timerText: document.getElementById('exam-timer-text'),
+                trainQ: document.getElementById('train-q-text'),
+                trainOpts: document.getElementById('train-options'),
+                trainFeedback: document.getElementById('train-feedback'),
+                trainFeedbackText: document.getElementById('train-feedback-text'),
+                examQ: document.getElementById('exam-q-text'),
+                examOpts: document.getElementById('exam-options'),
+                failReason: document.getElementById('fail-reason'),
+                phishingOverlay: document.getElementById('phishing-overlay'),
+                mainContainer: document.getElementById('main-container'),
+                mainHeader: document.getElementById('main-header'),
+                // 钓鱼相关
+                phishStep1: document.getElementById('phishing-step-1'),
+                phishStep2: document.getElementById('phishing-step-2'),
+                inputEmail: document.getElementById('input-email'),
+                displayEmail: document.getElementById('display-email-text'),
+                // 错误提示元素
+                emailErrorMsg: document.getElementById('email-error-msg'),
+                emailErrorText: document.getElementById('email-error-text'),
+                emailLabel: document.getElementById('g-email-label'),
+                // 密码相关
+                inputPassword: document.getElementById('input-password'),
+                checkboxShowPass: document.getElementById('checkbox-show-pass'),
+                // 勒索相关
+                ransomOverlay: document.getElementById('ransom-overlay'),
+                ransomEmailDisplay: document.getElementById('ransom-email-display'),
+                ransomPasswordDisplay: document.getElementById('ransom-password-display'),
+                // 音频
+                bgmRelaxing: document.getElementById('bgm-relaxing'),
+                bgmBattle: document.getElementById('bgm-battle'),
+                bgmRickroll: document.getElementById('bgm-rickroll')
+            };
+
+            // 设置音量
+            els.bgmRelaxing.volume = 0.4;
+            els.bgmBattle.volume = 0.5;
+            els.bgmRickroll.volume = 1.0; 
+
+            // 绑定事件
+            document.getElementById('btn-start-training').addEventListener('click', () => { 
+                // 播放轻松音乐
+                els.bgmRelaxing.play().catch(e => console.log("Audio play failed:", e));
+                currentTrainIdx = 0; 
+                switchScreen('training'); 
+                loadTrainingQuestion(); 
+            });
+            document.getElementById('btn-next-training').addEventListener('click', nextTrainingQ);
+            document.getElementById('btn-start-exam').addEventListener('click', startExamPhase);
+            document.getElementById('btn-retry-exam').addEventListener('click', startExamPhase);
+            
+            // 陷阱事件
+            document.getElementById('btn-bait').addEventListener('click', triggerPhishing);
+            document.getElementById('btn-phish-next-1').addEventListener('click', phishGoToPassword);
+            document.getElementById('btn-phish-next-2').addEventListener('click', endPhishing);
+
+            // 密码显示切换事件
+            els.checkboxShowPass.addEventListener('change', function() {
+                els.inputPassword.type = this.checked ? 'text' : 'password';
+            });
+
+            // 辅助函数
+            function shuffleArray(array) {
+                let newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            }
+
+            function switchScreen(screenName) {
+                Object.values(screens).forEach(el => el.classList.add('hidden'));
+                screens[screenName].classList.remove('hidden');
+            }
+
+            // 训练逻辑
+            function loadTrainingQuestion() {
+                const q = trainingQuestions[currentTrainIdx];
+                els.trainQ.innerText = `${currentTrainIdx + 1}. ${q.q}`;
+                document.getElementById('train-progress').innerText = `${currentTrainIdx + 1}/10`;
+                els.trainOpts.innerHTML = '';
+                els.trainFeedback.classList.add('hidden');
+                q.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-option';
+                    btn.innerText = opt;
+                    btn.onclick = () => {
+                        Array.from(els.trainOpts.children).forEach(b => b.disabled = true);
+                        els.trainFeedback.classList.remove('hidden');
+                        if (idx === q.a) {
+                            btn.style.borderColor = "var(--success-green)"; btn.style.background = "#e8f5e9";
+                            els.trainFeedbackText.innerHTML = `<span style="color:var(--success-green);font-weight:bold;">正确</span><br>${q.info}`;
+                        } else {
+                            btn.style.borderColor = "var(--alert-red)"; btn.style.background = "#ffebee";
+                            els.trainOpts.children[q.a].style.borderColor = "var(--success-green)";
+                            els.trainFeedbackText.innerHTML = `<span style="color:var(--alert-red);font-weight:bold;">错误</span><br>答案：${q.options[q.a]}<br>${q.info}`;
+                        }
+                    };
+                    els.trainOpts.appendChild(btn);
+                });
+            }
+
+            function nextTrainingQ() {
+                currentTrainIdx++;
+                if (currentTrainIdx < trainingQuestions.length) loadTrainingQuestion();
+                else switchScreen('transition');
+            }
+
+            // 考试逻辑
+            function startExamPhase() {
+                // 1. 停止轻松音乐
+                els.bgmRelaxing.pause();
+                // 2. 播放战斗音乐 (重置时间)
+                els.bgmBattle.currentTime = 0;
+                els.bgmBattle.play().catch(e => console.log("Battle music failed:", e));
+
+                switchScreen('exam');
+                currentExamSet = shuffleArray(examQuestionsMaster);
+                currentExamIdx = 0;
+                els.timerBox.style.display = 'block';
+                if(examTimer) clearInterval(examTimer);
+                timeLeft = TOTAL_TIME;
+                updateTimerVisual();
+                examTimer = setInterval(() => {
+                    timeLeft -= 0.1;
+                    updateTimerVisual();
+                    if (timeLeft <= 0) failExam("时间耗尽。");
+                }, 100);
+                loadExamQuestion();
+            }
+
+            function updateTimerVisual() {
+                els.timerBar.style.width = `${(timeLeft / TOTAL_TIME) * 100}%`;
+                els.timerText.innerText = Math.max(0, timeLeft).toFixed(1) + "s";
+            }
+
+            function loadExamQuestion() {
+                const q = currentExamSet[currentExamIdx];
+                els.examQ.innerText = `[${currentExamIdx + 1}/${currentExamSet.length}] ${q.q}`;
+                els.examOpts.innerHTML = '';
+                q.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-option';
+                    btn.innerText = opt;
+                    btn.onclick = () => {
+                        if (idx === q.a) {
+                            currentExamIdx++;
+                            if (currentExamIdx < currentExamSet.length) loadExamQuestion();
+                            else passExam();
+                        } else failExam("判断失误。");
+                    };
+                    els.examOpts.appendChild(btn);
+                });
+            }
+
+            function failExam(reason) {
+                // 考试失败，停止战斗音乐
+                els.bgmBattle.pause();
+                
+                clearInterval(examTimer);
+                els.timerBox.style.display = 'none';
+                els.failReason.innerText = reason;
+                switchScreen('fail');
+            }
+
+            function passExam() {
+                // 考试通过，停止战斗音乐 (进入安静的诱饵时刻)
+                els.bgmBattle.pause();
+                
+                clearInterval(examTimer);
+                els.timerBox.style.display = 'none';
+                switchScreen('success');
+            }
+
+            // --- 钓鱼逻辑 ---
+            function triggerPhishing() {
+                // 确保所有之前音乐停止
+                els.bgmRelaxing.pause();
+                els.bgmBattle.pause();
+
+                els.mainContainer.style.display = 'none';
+                els.mainHeader.style.display = 'none';
+                els.phishingOverlay.classList.remove('hidden');
+                
+                // 重置状态
+                els.phishStep1.classList.remove('hidden');
+                els.phishStep2.classList.add('hidden');
+                els.inputEmail.value = '';
+                els.inputPassword.value = '';
+                els.inputPassword.type = 'password';
+                els.checkboxShowPass.checked = false;
+                
+                resetEmailError();
+            }
+
+            function resetEmailError() {
+                els.inputEmail.classList.remove('g-input-error');
+                els.emailLabel.classList.remove('g-label-error');
+                els.emailErrorMsg.classList.add('hidden');
+            }
+
+            function showEmailError(msg) {
+                els.inputEmail.classList.add('g-input-error');
+                els.emailLabel.classList.add('g-label-error');
+                els.emailErrorText.innerText = msg;
+                els.emailErrorMsg.classList.remove('hidden');
+                els.inputEmail.focus();
+            }
+
+            function phishGoToPassword() {
+                const email = els.inputEmail.value.trim();
+                if (!email) { showEmailError("请输入电子邮件地址或电话号码"); return; }
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailPattern.test(email)) { showEmailError("请输入有效的电子邮件地址"); return; }
+
+                resetEmailError();
+                els.displayEmail.innerText = email;
+                els.phishStep1.classList.add('hidden');
+                els.phishStep2.classList.remove('hidden');
+                setTimeout(() => els.inputPassword.focus(), 100);
+            }
+
+            function endPhishing() {
+                // 1. 停止所有其他音乐 (Just in case)
+                els.bgmRelaxing.pause();
+                els.bgmBattle.pause();
+
+                // 2. 隐藏钓鱼层和主界面
+                els.phishingOverlay.classList.add('hidden');
+                els.mainContainer.style.display = 'none';
+                els.mainHeader.style.display = 'none';
+
+                // 3. 填入数据 (Email & Password)
+                els.ransomEmailDisplay.innerText = els.inputEmail.value;
+                els.ransomPasswordDisplay.innerText = els.inputPassword.value;
+
+                // 4. 显示勒索页面
+                els.ransomOverlay.classList.remove('hidden');
+
+                // 5. 播放 Rickroll
+                els.bgmRickroll.currentTime = 0;
+                els.bgmRickroll.play().catch(e => console.log("Rickroll play failed:", e));
+            }
+            
+            els.inputEmail.addEventListener('input', resetEmailError);
+            els.inputEmail.addEventListener('keypress', function(e) { if(e.key === 'Enter') phishGoToPassword(); });
+            els.inputPassword.addEventListener('keypress', function(e) { if(e.key === 'Enter') endPhishing(); });
+        });
+    </script>
+</body>
+</html>
