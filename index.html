@@ -26,13 +26,13 @@
             color: var(--text-dark);
             user-select: none;
             overflow-x: hidden;
-            transition: filter 0.3s ease; /* 变灰过渡更灵敏 */
+            transition: filter 0.3s ease;
         }
 
         /* --- 页面变灰模式 --- */
         body.body-gray-mode {
             filter: grayscale(100%) contrast(1.1) brightness(0.95);
-            pointer-events: none; /* 禁止操作 */
+            pointer-events: none;
         }
 
         header {
@@ -204,34 +204,74 @@
         .g-chip-arrow { margin-left: 8px; color: #444746; }
 
         /* --- 优化的输入框样式 (含点击动画) --- */
-        .g-input-wrapper { margin-top: 20px; position: relative; margin-bottom: 8px; }
-        
-        .g-input {
-            width: 100%; padding: 13px 15px; height: 56px; 
-            border: 1px solid #747775; border-radius: 4px;
-            font-size: 16px; box-sizing: border-box; color: #1f1f1f; 
-            outline: none; 
-            /* 关键：增加 border 和 padding 的过渡，模拟变粗的动画 */
-            transition: border-width 0.1s, border-color 0.2s, padding 0.1s; 
+        .g-input-wrapper { 
+            margin-top: 20px; 
+            position: relative; 
+            margin-bottom: 8px; 
+            height: 56px; 
         }
         
-        /* 聚焦态：边框变粗，Padding 相应减小以防抖动 */
+        /* 隐藏浏览器默认的密码查看图标（小眼睛） */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+        
+        .g-input {
+            width: 100%; 
+            padding: 13px 15px; 
+            height: 100%; 
+            border: 1px solid #747775; 
+            border-radius: 4px;
+            font-size: 16px; 
+            box-sizing: border-box; 
+            color: #1f1f1f; 
+            outline: none; 
+            background: transparent; 
+            transition: border-color 0.2s;
+            z-index: 1;
+            position: relative;
+        }
+        
         .g-input:focus { 
             border: 2px solid var(--google-blue); 
-            padding: 13px 14px; /* 15px - 1px = 14px */
+            padding: 12px 14px; 
         }
         
         .g-input-error { border-color: #d93025 !important; }
         
+        /* 标签默认状态：在输入框内 */
         .g-label-float {
-            position: absolute; top: -10px; left: 12px; background: white; padding: 0 4px;
-            color: #1f1f1f; font-size: 12px; font-weight: 400;
-            pointer-events: none; /* 防止遮挡点击 */
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white; 
+            padding: 0 4px;
+            color: #747775; 
+            font-size: 16px; 
+            font-weight: 400;
+            pointer-events: none; 
+            transition: all 0.2s ease-out;
+            z-index: 2;
         }
         
-        /* 聚焦时标签变色 */
-        .g-input:focus ~ .g-label-float { color: var(--google-blue); font-weight: 500; }
+        /* 当输入框聚焦 或 输入框不为空时，标签上浮 */
+        .g-input:focus ~ .g-label-float,
+        .g-input:not(:placeholder-shown) ~ .g-label-float {
+            top: 0;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: var(--google-blue);
+        }
+
+        /* 有内容但未聚焦时，标签颜色保持灰色 */
+        .g-input:not(:placeholder-shown):not(:focus) ~ .g-label-float {
+            color: #444746;
+        }
+
         .g-label-error { color: #d93025 !important; }
+        .g-input:focus ~ .g-label-error { color: #d93025 !important; }
         
         .g-error-msg { display: flex; align-items: center; color: #d93025; font-size: 12px; margin-top: 6px; line-height: 1.2; }
         .g-error-msg svg { margin-right: 8px; flex-shrink: 0; }
@@ -344,7 +384,7 @@
                 <p><strong>考核流程简报：</strong></p>
                 <ol>
                     <li><strong>基础复训</strong>：8道基础题。</li>
-                    <li><strong>实战考核</strong>：6道高阶题，<strong style="color:red">30秒限时</strong>。</li>
+                    <li><strong>实战考核</strong>：6道高阶题，<strong style="color:red">20秒限时</strong>。</li>
                 </ol>
             </div>
             <button id="btn-start-training" class="btn">开始基础复训</button>
@@ -365,14 +405,14 @@
             <div style="font-size: 4rem; color: var(--success-green); margin-bottom: 20px;">✓</div>
             <h2>基础复训完成</h2>
             <div style="background: #ffebee; border: 1px solid var(--alert-red); padding: 15px; margin: 20px 0; color: var(--alert-red);">
-                <strong>⚠ 极速挑战模式 ⚠</strong><br>30秒 | 6道题 | 0容错
+                <strong>⚠ 极速挑战模式 ⚠</strong><br>20秒 | 6道题 | 0容错
             </div>
             <button id="btn-start-exam" class="btn" style="background-color: var(--alert-red);">启动实战考核[知识点属于课外，但是你可以无限次尝试]</button>
         </div>
 
         <div id="screen-exam" class="hidden">
             <span class="phase-badge badge-exam">阶段二：实战考核 (Live)</span>
-            <span id="exam-timer-text" style="float: right; color: var(--alert-red); font-weight:bold; font-size: 1.5rem;">30.0s</span>
+            <span id="exam-timer-text" style="float: right; color: var(--alert-red); font-weight:bold; font-size: 1.5rem;">20.0s</span>
             <h3 id="exam-q-text">问题...</h3>
             <div id="exam-options"></div>
         </div>
@@ -446,8 +486,9 @@
                 
                 <div id="view-email" class="g-view-wrapper">
                     <div class="g-input-wrapper">
+                        <input type="text" id="input-email" class="g-input" placeholder=" " autofocus>
                         <span class="g-label-float" id="g-email-label">邮箱或电话号码</span>
-                        <input type="text" id="input-email" class="g-input" autofocus>
+                        
                         <div id="email-error-msg" class="g-error-msg hidden">
                             <svg aria-hidden="true" fill="currentColor" width="16px" height="16px" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg>
                             <span id="email-error-text">请输入有效的电子邮件地址</span>
@@ -464,8 +505,8 @@
                 <div id="view-password" class="g-view-wrapper">
                     <p class="g-password-prompt">如需继续操作，请先验证您的身份</p>
                     <div class="g-input-wrapper">
+                        <input type="password" id="input-password" class="g-input" placeholder=" ">
                         <span class="g-label-float">输入您的密码</span>
-                        <input type="password" id="input-password" class="g-input">
                     </div>
                     <div class="g-checkbox-wrapper">
                         <input type="checkbox" class="g-checkbox" id="checkbox-show-pass"> 
@@ -538,8 +579,9 @@
             let currentExamIdx = 0;
             let currentExamSet = [];
             let examTimer = null;
-            let timeLeft = 30;
-            const TOTAL_TIME = 30;
+            // 修改点：倒计时改为 20 秒
+            let timeLeft = 20;
+            const TOTAL_TIME = 20;
             let offlineTimer = null;
 
             const screens = {
