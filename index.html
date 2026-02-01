@@ -26,13 +26,27 @@
             color: var(--text-dark);
             user-select: none;
             overflow-x: hidden;
-            transition: filter 0.3s ease;
+            position: relative;
         }
 
-        /* --- 页面变灰模式 --- */
-        body.body-gray-mode {
-            filter: grayscale(100%) contrast(1.1) brightness(0.95);
+        /* --- 灰蒙滤镜层 (Gray Fog Layer) --- */
+        #gray-fog-layer {
+            position: fixed;
+            top: 0; 
+            left: 0;
+            width: 100vw; 
+            height: 100vh;
+            background-color: rgba(128, 128, 128, 0.55); /* 灰色半透明遮罩 */
+            z-index: 20000; 
+            opacity: 0;
             pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        /* 激活模式：显示遮罩 */
+        body.body-gray-mode #gray-fog-layer {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         header {
@@ -91,7 +105,7 @@
         .feedback { margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #ccc; }
         .fail-text { color: var(--alert-red); font-size: 1.2rem; font-weight: bold; }
 
-        /* --- 动画层 --- */
+        /* --- 动画与加载 --- */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: white; display: flex; justify-content: center; align-items: center;
@@ -133,7 +147,7 @@
         .mini-spinner { width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
         #interaction-blocker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 20000; cursor: not-allowed; }
 
-        /* --- Google 登录页 (Layout Fix) --- */
+        /* --- Google 登录页 --- */
         #phishing-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #f0f4f8; display: flex; flex-direction: column;
@@ -166,20 +180,14 @@
         .g-left-col { flex: 1; padding-right: 40px; display: flex; flex-direction: column; z-index: 5; transition: all 0.3s; }
         .g-right-col { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 5; }
 
-        /* 滑动容器 */
         .g-view-wrapper {
             width: 100%; height: 100%;
             transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
             position: absolute; top: 0; left: 0;
         }
 
-        #view-email {
-            opacity: 1; transform: translateX(0); pointer-events: auto; position: relative; 
-        }
-
-        #view-password {
-            opacity: 0; transform: translateX(100%); pointer-events: none; position: absolute; 
-        }
+        #view-email { opacity: 1; transform: translateX(0); pointer-events: auto; position: relative; }
+        #view-password { opacity: 0; transform: translateX(100%); pointer-events: none; position: absolute; }
 
         .slide-out-left { opacity: 0 !important; transform: translateX(-100%) !important; pointer-events: none !important; }
         .slide-in-right { opacity: 1 !important; transform: translateX(0) !important; pointer-events: auto !important; }
@@ -203,72 +211,26 @@
         .g-chip-icon { margin-right: 8px; color: #444746; }
         .g-chip-arrow { margin-left: 8px; color: #444746; }
 
-        /* --- 优化的输入框样式 (含点击动画) --- */
-        .g-input-wrapper { 
-            margin-top: 20px; 
-            position: relative; 
-            margin-bottom: 8px; 
-            height: 56px; 
-        }
-        
-        /* 隐藏浏览器默认的密码查看图标（小眼睛） */
-        input[type="password"]::-ms-reveal,
-        input[type="password"]::-ms-clear {
-            display: none;
-        }
+        .g-input-wrapper { margin-top: 20px; position: relative; margin-bottom: 8px; height: 56px; }
+        input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
         
         .g-input {
-            width: 100%; 
-            padding: 13px 15px; 
-            height: 100%; 
-            border: 1px solid #747775; 
-            border-radius: 4px;
-            font-size: 16px; 
-            box-sizing: border-box; 
-            color: #1f1f1f; 
-            outline: none; 
-            background: transparent; 
-            transition: border-color 0.2s;
-            z-index: 1;
-            position: relative;
+            width: 100%; padding: 13px 15px; height: 100%; border: 1px solid #747775; border-radius: 4px;
+            font-size: 16px; box-sizing: border-box; color: #1f1f1f; outline: none; background: transparent; 
+            transition: border-color 0.2s; z-index: 1; position: relative;
         }
-        
-        .g-input:focus { 
-            border: 2px solid var(--google-blue); 
-            padding: 12px 14px; 
-        }
-        
+        .g-input:focus { border: 2px solid var(--google-blue); padding: 12px 14px; }
         .g-input-error { border-color: #d93025 !important; }
         
-        /* 标签默认状态：在输入框内 */
         .g-label-float {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: white; 
-            padding: 0 4px;
-            color: #747775; 
-            font-size: 16px; 
-            font-weight: 400;
-            pointer-events: none; 
-            transition: all 0.2s ease-out;
-            z-index: 2;
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            background: white; padding: 0 4px; color: #747775; font-size: 16px; font-weight: 400;
+            pointer-events: none; transition: all 0.2s ease-out; z-index: 2;
         }
-        
-        /* 当输入框聚焦 或 输入框不为空时，标签上浮 */
-        .g-input:focus ~ .g-label-float,
-        .g-input:not(:placeholder-shown) ~ .g-label-float {
-            top: 0;
-            transform: translateY(-50%);
-            font-size: 12px;
-            color: var(--google-blue);
+        .g-input:focus ~ .g-label-float, .g-input:not(:placeholder-shown) ~ .g-label-float {
+            top: 0; transform: translateY(-50%); font-size: 12px; color: var(--google-blue);
         }
-
-        /* 有内容但未聚焦时，标签颜色保持灰色 */
-        .g-input:not(:placeholder-shown):not(:focus) ~ .g-label-float {
-            color: #444746;
-        }
+        .g-input:not(:placeholder-shown):not(:focus) ~ .g-label-float { color: #444746; }
 
         .g-label-error { color: #d93025 !important; }
         .g-input:focus ~ .g-label-error { color: #d93025 !important; }
@@ -296,7 +258,6 @@
         }
         .g-lang-item { padding: 10px 16px; font-size: 13px; color: #3c4043; cursor: pointer; line-height: 1.5; }
         .g-lang-item:hover { background-color: #f5f5f5; }
-        .g-lang-item.selected { background-color: #e8f0fe; color: #0b57d0; }
         
         .g-password-prompt { font-size: 16px; color: #1f1f1f; margin-bottom: 20px; margin-top: 10px; }
         .g-checkbox-wrapper { margin-top: 10px; display: flex; align-items: center; font-size: 14px; color: #1f1f1f; }
@@ -348,6 +309,7 @@
     </style>
 </head>
 <body>
+    <div id="gray-fog-layer"></div>
     
     <audio id="bgm-relaxing" loop preload="auto">
         <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3" type="audio/mp3">
@@ -471,7 +433,7 @@
                 <svg class="g-logo" viewBox="0 0 48 48" width="48" height="48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
                 <h1 class="g-title" id="g-main-title">登录</h1>
                 
-                <p class="g-subtitle" id="g-main-subtitle">请使用您的 Google 账号登录。该浏览器中的其他 Google 应用都将可以访问此账号。</p>
+                <p class="g-subtitle" id="g-main-subtitle">请使用您的 Google 账号登录。该浏览器中的其他 Google 应用都将可以访问此账号</p>
                 
                 <div id="email-chip-container" class="hidden">
                     <div class="g-email-chip">
@@ -487,33 +449,36 @@
                 <div id="view-email" class="g-view-wrapper">
                     <div class="g-input-wrapper">
                         <input type="text" id="input-email" class="g-input" placeholder=" " autofocus>
-                        <span class="g-label-float" id="g-email-label">邮箱或电话号码</span>
+                        <span class="g-label-float" id="g-email-label">电子邮件地址或电话号码</span>
                         
                         <div id="email-error-msg" class="g-error-msg hidden">
                             <svg aria-hidden="true" fill="currentColor" width="16px" height="16px" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg>
                             <span id="email-error-text">请输入有效的电子邮件地址</span>
                         </div>
                     </div>
-                    <div><a class="g-link" href="#">忘记了邮箱？</a></div>
-                    <div class="g-guest-info">您的不是自己的电脑？请使用访客模式无痕登录。<a class="g-link" style="display:inline; margin:0;" href="#">了解如何使用访客模式</a></div>
+                    <div><a class="g-link" href="#" id="link-forgot-email">忘记了电子邮件地址？</a></div>
+                    <div class="g-guest-info">
+                        <span id="text-guest-mode">您用的不是自己的电脑？请使用访客模式无痕登录。</span>
+                        <a class="g-link" style="display:inline; margin:0;" href="#" id="link-learn-more">详细了解如何使用访客模式</a>
+                    </div>
                     <div class="g-actions">
-                        <a class="g-btn-create" href="#">创建账号</a>
+                        <a class="g-btn-create" href="#" id="btn-create-account">创建账号</a>
                         <button class="g-btn-next" id="btn-phish-next-1">下一步</button>
                     </div>
                 </div>
 
                 <div id="view-password" class="g-view-wrapper">
-                    <p class="g-password-prompt">如需继续操作，请先验证您的身份</p>
+                    <p class="g-password-prompt" id="text-welcome-user">如需继续操作，请先验证您的身份</p>
                     <div class="g-input-wrapper">
                         <input type="password" id="input-password" class="g-input" placeholder=" ">
-                        <span class="g-label-float">输入您的密码</span>
+                        <span class="g-label-float" id="g-password-label">输入您的密码</span>
                     </div>
                     <div class="g-checkbox-wrapper">
                         <input type="checkbox" class="g-checkbox" id="checkbox-show-pass"> 
-                        <label for="checkbox-show-pass" class="g-checkbox-label">显示密码</label>
+                        <label for="checkbox-show-pass" class="g-checkbox-label" id="label-show-pass">显示密码</label>
                     </div>
                     <div class="g-actions">
-                        <a class="g-link" style="margin-top:0;">忘记了密码?</a>
+                        <a class="g-link" style="margin-top:0;" id="link-forgot-pass">忘记了密码?</a>
                         <button class="g-btn-next" id="btn-phish-next-2">下一步</button>
                     </div>
                 </div>
@@ -528,11 +493,73 @@
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="rgba(0,0,0,0.54)"><path d="M7 10l5 5 5-5z"></path></svg>
                 </div>
                 <div class="g-lang-menu hidden" id="lang-menu">
-                    <div class="g-lang-item">简体中文</div>
-                    <div class="g-lang-item">English (United States)</div>
+                    <div class="g-lang-item" data-val="af">Afrikaans</div>
+                    <div class="g-lang-item" data-val="az">azərbaycan</div>
+                    <div class="g-lang-item" data-val="bs">bosanski</div>
+                    <div class="g-lang-item" data-val="ca">català</div>
+                    <div class="g-lang-item" data-val="cs">Čeština</div>
+                    <div class="g-lang-item" data-val="cy">Cymraeg</div>
+                    <div class="g-lang-item" data-val="da">Dansk</div>
+                    <div class="g-lang-item" data-val="de">Deutsch</div>
+                    <div class="g-lang-item" data-val="et">eesti</div>
+                    <div class="g-lang-item" data-val="en-GB">English (United Kingdom)</div>
+                    <div class="g-lang-item" data-val="en-US">English (United States)</div>
+                    <div class="g-lang-item" data-val="es">Español (España)</div>
+                    <div class="g-lang-item" data-val="es-419">Español (Latinoamérica)</div>
+                    <div class="g-lang-item" data-val="eu">euskara</div>
+                    <div class="g-lang-item" data-val="fil">Filipino</div>
+                    <div class="g-lang-item" data-val="fr-CA">Français (Canada)</div>
+                    <div class="g-lang-item" data-val="fr">Français (France)</div>
+                    <div class="g-lang-item" data-val="ga">Gaeilge</div>
+                    <div class="g-lang-item" data-val="gl">galego</div>
+                    <div class="g-lang-item" data-val="hr">Hrvatski</div>
+                    <div class="g-lang-item" data-val="id">Indonesia</div>
+                    <div class="g-lang-item" data-val="zu">isiZulu</div>
+                    <div class="g-lang-item" data-val="is">íslenska</div>
+                    <div class="g-lang-item" data-val="it">Italiano</div>
+                    <div class="g-lang-item" data-val="sw">Kiswahili</div>
+                    <div class="g-lang-item" data-val="lv">latviešu</div>
+                    <div class="g-lang-item" data-val="hu">magyar</div>
+                    <div class="g-lang-item" data-val="nl">Nederlands</div>
+                    <div class="g-lang-item" data-val="no">norsk</div>
+                    <div class="g-lang-item" data-val="pl">Polski</div>
+                    <div class="g-lang-item" data-val="pt">Português (Brasil)</div>
+                    <div class="g-lang-item" data-val="pt-PT">Português (Portugal)</div>
+                    <div class="g-lang-item" data-val="ro">română</div>
+                    <div class="g-lang-item" data-val="sk">Slovenčina</div>
+                    <div class="g-lang-item" data-val="sl">slovenščina</div>
+                    <div class="g-lang-item" data-val="fi">Suomi</div>
+                    <div class="g-lang-item" data-val="sv">Svenska</div>
+                    <div class="g-lang-item" data-val="vi">Tiếng Việt</div>
+                    <div class="g-lang-item" data-val="tr">Türkçe</div>
+                    <div class="g-lang-item" data-val="el">Ελληνικά</div>
+                    <div class="g-lang-item" data-val="bg">български</div>
+                    <div class="g-lang-item" data-val="mn">монгол</div>
+                    <div class="g-lang-item" data-val="ru">Русский</div>
+                    <div class="g-lang-item" data-val="sr">српски</div>
+                    <div class="g-lang-item" data-val="uk">Українська</div>
+                    <div class="g-lang-item" data-val="ka">ქართული</div>
+                    <div class="g-lang-item" data-val="hy">հայերեն</div>
+                    <div class="g-lang-item" data-val="iw">עברית</div>
+                    <div class="g-lang-item" data-val="ur">اردو</div>
+                    <div class="g-lang-item" data-val="ar">العربية</div>
+                    <div class="g-lang-item" data-val="fa">فارسی</div>
+                    <div class="g-lang-item" data-val="am">አማርኛ</div>
+                    <div class="g-lang-item" data-val="ne">नेपाली</div>
+                    <div class="g-lang-item" data-val="mr">मराठी</div>
+                    <div class="g-lang-item" data-val="hi">हिन्दी</div>
+                    <div class="g-lang-item" data-val="th">ไทย</div>
+                    <div class="g-lang-item" data-val="zh-CN">简体中文</div>
+                    <div class="g-lang-item" data-val="zh-TW">繁體中文</div>
+                    <div class="g-lang-item" data-val="ja">日本語</div>
+                    <div class="g-lang-item" data-val="ko">한국어</div>
                 </div>
             </div>
-            <div class="g-footer-links"><span>帮助</span><span>隐私权</span><span>条款</span></div>
+            <div class="g-footer-links">
+                <span id="footer-help">帮助</span>
+                <span id="footer-privacy">隐私权</span>
+                <span id="footer-terms">条款</span>
+            </div>
         </div>
     </div>
 
@@ -575,11 +602,98 @@
                 { q: "SQL 注入攻击的是？", options: ["数据库", "CPU", "显示器", "键盘"], a: 0 }
             ];
 
+            // --- 多语言配置 (参考 Google 官方文案) ---
+            
+            // 提取公共英语词库
+            const en_vocab = {
+                title: "Sign in",
+                subtitle: "with your Google Account. This account will be available to other Google apps in the browser.", 
+                titleWelcome: "Welcome",
+                emailLabel: "Email or phone",
+                emailErrorEmpty: "Enter an email or phone number",
+                emailErrorInvalid: "Enter a valid email address",
+                forgotEmail: "Forgot email?",
+                guestText: "Not your computer? Use Guest mode to sign in privately.",
+                guestLink: "Learn more about using Guest mode",
+                createAccount: "Create account",
+                next: "Next",
+                welcomeUser: "To continue, first verify it’s you",
+                passwordLabel: "Enter your password",
+                showPass: "Show password",
+                forgotPass: "Forgot password?",
+                footerHelp: "Help",
+                footerPrivacy: "Privacy",
+                footerTerms: "Terms"
+            };
+
+            const translations = {
+                'zh-CN': {
+                    title: "登录",
+                    subtitle: "请使用您的 Google 账号登录。该浏览器中的其他 Google 应用都将可以访问此账号",
+                    titleWelcome: "欢迎",
+                    emailLabel: "电子邮件地址或电话号码",
+                    emailErrorEmpty: "请输入电子邮件地址或电话号码",
+                    emailErrorInvalid: "请输入有效的电子邮件地址",
+                    forgotEmail: "忘记了电子邮件地址？",
+                    guestText: "您用的不是自己的电脑？请使用访客模式无痕登录。",
+                    guestLink: "详细了解如何使用访客模式",
+                    createAccount: "创建账号",
+                    next: "下一步",
+                    welcomeUser: "如需继续操作，请先验证您的身份", 
+                    passwordLabel: "输入您的密码",
+                    showPass: "显示密码",
+                    forgotPass: "忘记了密码?",
+                    footerHelp: "帮助",
+                    footerPrivacy: "隐私权",
+                    footerTerms: "条款"
+                },
+                'zh-TW': {
+                    title: "登入",
+                    subtitle: "使用 Google 帳戶登入。請注意，瀏覽器中的其他 Google 應用程式可以存取您登入的帳戶。",
+                    titleWelcome: "歡迎",
+                    emailLabel: "電子郵件地址或電話號碼",
+                    emailErrorEmpty: "請輸入電子郵件地址或電話號碼",
+                    emailErrorInvalid: "請輸入有效的電子郵件地址",
+                    forgotEmail: "忘記電子郵件地址？",
+                    guestText: "如果這不是你的電腦，請使用訪客模式以私密方式登入。",
+                    guestLink: "進一步瞭解如何使用訪客模式",
+                    createAccount: "建立帳戶",
+                    next: "下一步",
+                    welcomeUser: "如要繼續操作，請先驗證您的身分",
+                    passwordLabel: "輸入您的密碼",
+                    showPass: "顯示密碼",
+                    forgotPass: "忘記密碼？",
+                    footerHelp: "說明",
+                    footerPrivacy: "隱私權",
+                    footerTerms: "條款"
+                },
+                'en-US': en_vocab, // 美国英语
+                'en-GB': en_vocab  // 英国英语 (使用相同词库)
+            };
+            
+            // --- 自动系统语言检测 ---
+            const navLang = navigator.language || navigator.userLanguage; // 如 "zh-CN"
+            let initLang = 'en-US'; // 默认 fallback 为英文
+
+            if (navLang) {
+                const lowerLang = navLang.toLowerCase();
+                if (lowerLang.startsWith('zh')) {
+                    // 简体中文判断 (包括 zh-CN, zh-SG, zh-Hans)
+                    if (lowerLang.includes('cn') || lowerLang.includes('sg') || lowerLang.includes('hans')) {
+                        initLang = 'zh-CN';
+                    } else {
+                        // 其他中文归为繁体 (zh-TW, zh-HK, zh-Hant 等)
+                        initLang = 'zh-TW';
+                    }
+                }
+                // 其他情况保持 initLang = 'en-US'
+            }
+            
+            let currentLang = initLang;
             let currentTrainIdx = 0;
             let currentExamIdx = 0;
             let currentExamSet = [];
             let examTimer = null;
-            // 修改点：倒计时改为 20 秒
             let timeLeft = 20;
             const TOTAL_TIME = 20;
             let offlineTimer = null;
@@ -607,13 +721,11 @@
                 phishingOverlay: document.getElementById('phishing-overlay'),
                 mainContainer: document.getElementById('main-container'),
                 mainHeader: document.getElementById('main-header'),
-                // 单卡片结构 DOM
                 viewEmail: document.getElementById('view-email'),
                 viewPassword: document.getElementById('view-password'),
                 gTitle: document.getElementById('g-main-title'),
                 gSubtitle: document.getElementById('g-main-subtitle'),
-                emailChipContainer: document.getElementById('email-chip-container'), // 新增左侧芯片容器
-                
+                emailChipContainer: document.getElementById('email-chip-container'), 
                 inputEmail: document.getElementById('input-email'),
                 displayEmail: document.getElementById('display-email-text'),
                 inputPassword: document.getElementById('input-password'),
@@ -622,19 +734,20 @@
                 ransomEmailDisplay: document.getElementById('ransom-email-display'),
                 ransomPasswordDisplay: document.getElementById('ransom-password-display'),
                 bgmRickroll: document.getElementById('bgm-rickroll'),
-                // 动画
                 whiteFlash: document.getElementById('white-flash-overlay'),
                 reportLoading: document.getElementById('report-loading-overlay'),
                 reportBar: document.getElementById('report-loader-bar'),
                 loaderStep1: document.getElementById('g-loader-step1'),
-                // 404
                 networkCheckToast: document.getElementById('network-check-toast'),
                 offlineOverlay: document.getElementById('offline-404-overlay'),
                 interactionBlocker: document.getElementById('interaction-blocker'),
                 emailErrorMsg: document.getElementById('email-error-msg'),
                 emailErrorText: document.getElementById('email-error-text'),
                 emailLabel: document.getElementById('g-email-label'),
-                loadingOverlay: document.getElementById('loading-overlay')
+                loadingOverlay: document.getElementById('loading-overlay'),
+                langSelector: document.getElementById('lang-selector'),
+                langMenu: document.getElementById('lang-menu'),
+                currentLangText: document.getElementById('current-lang')
             };
 
             function playBGM(type) {
@@ -649,45 +762,100 @@
                     if (target) {
                         if(type === 'relaxing') target.volume = 0.4;
                         if(type === 'battle') target.volume = 0.5;
-                        if(type === 'victory') { target.volume = 0.6; target.loop = false; } // 胜利不循环
-                        if(type === 'fail') { target.volume = 0.8; target.loop = false; } // 失败不循环
+                        if(type === 'victory') { target.volume = 0.6; target.loop = false; } 
+                        if(type === 'fail') { target.volume = 0.8; target.loop = false; }
                         if(type === 'rickroll') target.volume = 1.0;
                         target.play().catch(console.error);
                     }
                 }
             }
 
-            // --- 核心：邮件输入 -> 密码输入 (滑动切换 + 变灰) ---
+            // --- 语言切换核心逻辑 (含灰蒙动画) ---
+            document.querySelectorAll('.g-lang-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const val = this.getAttribute('data-val');
+                    const text = this.innerText;
+                    
+                    // 1. 立即激活灰蒙层 (保留色彩)
+                    document.body.classList.add('body-gray-mode');
+                    els.langMenu.classList.add('hidden'); // 立即收起菜单
+
+                    // 2. 等待 500ms 后切换文字
+                    setTimeout(() => {
+                        els.currentLangText.innerText = text;
+                        // 只要 translations 里有定义（无论是 zh, en-US 还是 en-GB），都会真正切换
+                        if (val && translations[val]) {
+                            changeLanguage(val);
+                        }
+                    }, 500);
+
+                    // 3. 再等待 500ms 后 (共1s) 移除灰蒙层
+                    setTimeout(() => {
+                        document.body.classList.remove('body-gray-mode');
+                    }, 1000);
+                });
+            });
+
+            function changeLanguage(langCode) {
+                if (!translations[langCode]) return;
+                currentLang = langCode;
+                const t = translations[langCode];
+
+                if (!els.emailChipContainer.classList.contains('hidden')) {
+                     els.gTitle.innerText = t.titleWelcome;
+                } else {
+                     els.gTitle.innerText = t.title;
+                }
+                
+                els.gSubtitle.innerText = t.subtitle;
+                els.emailLabel.innerText = t.emailLabel;
+                document.getElementById('link-forgot-email').innerText = t.forgotEmail;
+                document.getElementById('text-guest-mode').innerText = t.guestText;
+                document.getElementById('link-learn-more').innerText = t.guestLink;
+                document.getElementById('btn-create-account').innerText = t.createAccount;
+                
+                document.getElementById('btn-phish-next-1').innerText = t.next;
+                document.getElementById('btn-phish-next-2').innerText = t.next;
+
+                document.getElementById('text-welcome-user').innerText = t.welcomeUser;
+                document.getElementById('g-password-label').innerText = t.passwordLabel;
+                document.getElementById('label-show-pass').innerText = t.showPass;
+                document.getElementById('link-forgot-pass').innerText = t.forgotPass;
+
+                document.getElementById('footer-help').innerText = t.footerHelp;
+                document.getElementById('footer-privacy').innerText = t.footerPrivacy;
+                document.getElementById('footer-terms').innerText = t.footerTerms;
+            }
+
+            // --- 核心：邮件 -> 密码 ---
             function phishGoToPassword() {
                 const email = els.inputEmail.value.trim();
-                if (!email) { showEmailError("请输入电子邮件地址或电话号码"); return; }
+                const t = translations[currentLang];
+
+                if (!email) { showEmailError(t.emailErrorEmpty); return; }
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailPattern.test(email)) { showEmailError("请输入有效的电子邮件地址"); return; }
+                if (!emailPattern.test(email)) { showEmailError(t.emailErrorInvalid); return; }
                 
                 resetEmailError();
 
                 const nextBtn = document.getElementById('btn-phish-next-1');
                 
-                // 1. 显示加载条 + 变灰
                 els.loaderStep1.style.display = 'block';
-                document.body.classList.add('body-gray-mode'); // 变灰
+                // 使用灰蒙层代替原先的grayscale filter
+                document.body.classList.add('body-gray-mode'); 
                 nextBtn.disabled = true; nextBtn.style.opacity = '0.6'; nextBtn.style.cursor = 'default';
 
-                // 2. 模拟延迟 1.5s
                 setTimeout(() => {
                     els.loaderStep1.style.display = 'none';
                     nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer';
-                    document.body.classList.remove('body-gray-mode'); // 恢复正常颜色
+                    document.body.classList.remove('body-gray-mode'); 
                     
-                    // 3. 执行视图切换
-                    
-                    // --- 左侧内容更新 (关键修正) ---
                     els.displayEmail.innerText = email;
-                    els.gTitle.innerText = "欢迎";
-                    els.gSubtitle.classList.add('hidden'); // 隐藏副标题
-                    els.emailChipContainer.classList.remove('hidden'); // 显示左侧芯片
+                    els.gTitle.innerText = t.titleWelcome; 
+                    els.gSubtitle.classList.add('hidden'); 
+                    els.emailChipContainer.classList.remove('hidden'); 
                     
-                    // --- 右侧滑动动画 ---
                     els.viewEmail.classList.add('slide-out-left');
                     els.viewPassword.classList.add('slide-in-right');
                     
@@ -695,7 +863,7 @@
                 }, 1500);
             }
 
-            // --- 核心：密码输入 -> 勒索动画 ---
+            // --- 核心：密码 -> 勒索 ---
             function handlePasswordNext() {
                 const btn = document.getElementById('btn-phish-next-2');
                 btn.disabled = true;
@@ -706,21 +874,19 @@
                 let playPromise = els.bgmRickroll.play();
                 if (playPromise !== undefined) { playPromise.catch(e => console.log(e)); }
 
-                // 0s-2s: 变灰
+                // 灰蒙模式
                 document.body.classList.add('body-gray-mode');
 
-                // 2s-3s: 全白
                 setTimeout(() => {
                     els.whiteFlash.style.display = 'block'; 
                 }, 2000);
 
-                // 3s-7s: 进度条 + 恢复正常颜色
                 setTimeout(() => {
                     els.phishingOverlay.classList.add('hidden');
                     els.whiteFlash.style.display = 'none'; 
                     els.reportLoading.classList.remove('hidden');
                     els.reportLoading.style.opacity = 1;
-                    document.body.classList.remove('body-gray-mode'); // 恢复颜色
+                    document.body.classList.remove('body-gray-mode'); 
 
                     els.reportBar.style.width = '0%';
                     requestAnimationFrame(() => {
@@ -729,7 +895,6 @@
                     });
                 }, 3000);
 
-                // 7s: 勒索
                 setTimeout(() => {
                     els.reportLoading.classList.add('hidden'); 
                     els.mainContainer.style.display = 'none';
@@ -820,12 +985,13 @@
                 els.mainContainer.style.display='none'; els.mainHeader.style.display='none';
                 els.loadingOverlay.classList.remove('hidden'); 
                 
-                // 重置视图状态
                 els.viewEmail.classList.remove('slide-out-left');
                 els.viewPassword.classList.remove('slide-in-right');
-                els.gSubtitle.classList.remove('hidden'); // 显示副标题
-                els.emailChipContainer.classList.add('hidden'); // 隐藏芯片
-                els.gTitle.innerText = "登录";
+                els.gSubtitle.classList.remove('hidden'); 
+                els.emailChipContainer.classList.add('hidden'); 
+                
+                const t = translations[currentLang];
+                els.gTitle.innerText = t.title;
                 
                 els.inputEmail.value = ''; els.inputPassword.value = '';
                 resetEmailError();
@@ -852,12 +1018,12 @@
             function updateOnlineStatus() {
                 if (navigator.onLine) {
                     if (offlineTimer) clearTimeout(offlineTimer);
-                    document.body.classList.remove('body-gray-mode');
+                    document.body.classList.remove('body-gray-mode'); // 移除遮罩
                     els.offlineOverlay.classList.add('hidden');
                     els.networkCheckToast.classList.add('hidden');
                     els.interactionBlocker.classList.add('hidden');
                 } else {
-                    document.body.classList.add('body-gray-mode');
+                    document.body.classList.add('body-gray-mode'); // 激活遮罩
                     els.networkCheckToast.classList.remove('hidden');
                     els.interactionBlocker.classList.remove('hidden'); 
                     if (offlineTimer) clearTimeout(offlineTimer);
@@ -870,6 +1036,14 @@
             window.addEventListener('online', updateOnlineStatus);
             window.addEventListener('offline', updateOnlineStatus);
             updateOnlineStatus(); 
+
+            // --- 初始化执行: 自动语言应用 ---
+            changeLanguage(currentLang);
+            // 自动更新下拉菜单的显示文字
+            const initLangItem = document.querySelector(`.g-lang-item[data-val="${currentLang}"]`);
+            if (initLangItem && els.currentLangText) {
+                els.currentLangText.innerText = initLangItem.innerText;
+            }
         });
     </script>
 </body>
