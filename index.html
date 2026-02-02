@@ -3,1069 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HKPC ICT內部考核系統 - 實戰靶場</title>
+    <title>N.S.B. 內部安全審查系統 - 實戰考核</title>
     <style>
+        /* --- 視覺核心 --- */
         :root {
-            --primary-blue: #0a2463;
-            --accent-gold: #fb8b24;
-            --bg-light: #f0f2f5;
-            --text-dark: #1f1f1f;
-            --alert-red: #d00000;
-            --success-green: #2a9d8f;
-            --google-blue: #0b57d0;
+            --police-dark: #0a2342;       
+            --police-blue: #0056b3;       
+            --text-main: #1a1a1a;
+            --glass: rgba(255, 255, 255, 0.98); 
+            --shadow: 0 8px 30px rgba(10, 35, 66, 0.2);
+            --border: #cadae8;
+            --warning-red: #d32f2f; /* 警告紅 */
         }
 
-        /* --- 1. 光標邏輯分離 --- */
         body {
-            background-color: var(--bg-light);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--text-dark);
-            user-select: none;
-            overflow-x: hidden;
-            position: relative;
-            cursor: default; /* 默認光標 */
-        }
-
-        /* 普通按鈕和鏈接恢復手型光標 */
-        button, a, .g-lang-item, .g-email-chip, .g-checkbox-label {
-            cursor: pointer;
-        }
-
-        input {
-            cursor: text;
-        }
-
-        /* 僅在射擊靶場區域使用十字準心 */
-        .shooting-range-box, .target-btn {
-            cursor: crosshair !important;
-        }
-
-        /* --- 2. 射擊靶場樣式 --- */
-        .shooting-range-box {
-            position: relative;
-            width: 100%;
-            height: 500px;
-            background-color: #1a1a1a;
-            border: 4px solid #444;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-top: 20px;
+            margin: 0; padding: 0;
+            background-color: #f4f7fa;
             background-image: 
-                linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+                linear-gradient(rgba(10, 35, 66, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(10, 35, 66, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh; overflow: hidden; user-select: none;
         }
 
-        /* --- 3. 多樣化移動路徑定義 --- */
-        @keyframes pathScanH { 0% { transform: translateX(0); } 100% { transform: translateX(300px); } }
-        @keyframes pathScanV { 0% { transform: translateY(0); } 100% { transform: translateY(200px); } }
-        @keyframes pathCircle {
-            0% { transform: rotate(0deg) translateX(100px) rotate(0deg); }
-            100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
-        }
-        @keyframes pathFigure8 {
-            0% { transform: translate(0, 0); } 25% { transform: translate(100px, 50px); }
-            50% { transform: translate(0, 100px); } 75% { transform: translate(-100px, 50px); }
-            100% { transform: translate(0, 0); }
-        }
-        @keyframes pathDiagonal { 0% { transform: translate(0, 0); } 50% { transform: translate(200px, 200px); } 100% { transform: translate(0, 0); } }
-        @keyframes pathJitter {
-            0% { transform: translate(0,0); } 20% { transform: translate(50px, -20px); }
-            40% { transform: translate(100px, 20px); } 60% { transform: translate(150px, -30px); }
-            80% { transform: translate(200px, 10px); } 100% { transform: translate(250px, 0); }
-        }
-
-        .target-btn {
+        /* --- 頂部狀態欄 --- */
+        .top-hud {
             position: absolute;
-            width: 140px;
-            height: auto;
-            min-height: 60px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #d00000;
-            border-radius: 50%;
-            color: #d00000;
-            font-weight: bold;
-            font-size: 13px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 10px;
-            box-shadow: 0 0 10px rgba(208, 0, 0, 0.6);
-            z-index: 10;
-            user-select: none;
-            transition: background 0.1s;
+            top: 0; left: 0; width: 100%; height: 60px;
+            background: var(--police-dark);
+            color: white; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 30px; box-sizing: border-box; z-index: 100;
         }
-        .target-btn::before {
-            content: ''; position: absolute; width: 80%; height: 80%;
-            border: 1px dashed #d00000; border-radius: 50%; pointer-events: none;
-        }
-        .target-btn:hover { background: #fff; box-shadow: 0 0 20px #d00000; z-index: 20; }
-        .target-btn:active { transform: scale(0.95); background: #ffaaaa; }
-
-        /* --- 基礎樣式 --- */
-        #gray-fog-layer {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(128, 128, 128, 0.55);
-            z-index: 20000; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        body.body-gray-mode #gray-fog-layer { opacity: 1; pointer-events: auto; }
-
-        header {
-            width: 100%; background-color: var(--primary-blue); color: white;
-            padding: 15px 0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100;
-        }
-        header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 2px; }
-        header p { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.8; }
-
-        .container {
-            width: 900px; max-width: 98%; background: white; margin-top: 20px;
-            border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            overflow: hidden; position: relative; padding: 20px; min-height: 650px;
-            z-index: 50; /* 確保容器層級正確 */
-        }
-
-        .phase-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; }
-        .badge-training { background: #e3f2fd; color: var(--primary-blue); }
-        .badge-exam { background: #ffebee; color: var(--alert-red); border: 1px solid var(--alert-red); }
-
-        .btn {
-            background-color: var(--primary-blue); color: white; border: none;
-            padding: 12px 30px; font-size: 1rem; border-radius: 5px; 
-            transition: 0.2s; margin-top: 20px; display: inline-block;
-        }
-        .btn:hover { background-color: #051b4d; transform: translateY(-1px); }
         
-        .timer-container { height: 10px; background: #eee; width: 100%; position: absolute; top: 0; left: 0; display: none; z-index: 10; }
-        .timer-bar { height: 100%; background: var(--alert-red); width: 100%; transition: width 0.1s linear; }
+        .progress-track { width: 200px; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: #00d2ff; transition: width 0.5s ease; }
 
-        .hidden { display: none !important; }
-        .feedback { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 30px; background: rgba(255,255,255,0.95); 
-            border: 4px solid var(--primary-blue); border-radius: 10px;
-            text-align: center; z-index: 100; width: 300px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        /* --- 人物立繪層 --- */
+        #character-stage {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 10; pointer-events: none; display: flex; justify-content: center; align-items: flex-end;
         }
-        .fail-text { color: var(--alert-red); font-size: 1.2rem; font-weight: bold; }
+        .character-img { max-height: 95vh; width: auto; transition: opacity 0.5s ease; opacity: 0; }
 
-        .question-header {
-            background: #fff; padding: 10px; border-bottom: 2px solid #eee;
-            font-size: 1.2rem; font-weight: bold; min-height: 50px;
+        /* --- 對話框 --- */
+        #dialogue-layer {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 1100px; height: 220px; z-index: 50; cursor: pointer;
+        }
+        .dialogue-box {
+            width: 100%; height: 100%; background: var(--glass); border-radius: 8px;
+            padding: 50px 40px; box-sizing: border-box; box-shadow: var(--shadow);
+            border-top: 4px solid var(--police-dark); position: relative;
+        }
+        .name-tag {
+            position: absolute; top: -20px; left: 40px; background: var(--police-dark);
+            color: white; padding: 8px 30px; font-weight: bold; border-radius: 4px;
         }
 
-        /* --- 加載與提示層 --- */
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: white; display: flex; justify-content: center; align-items: center; z-index: 10002; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1a73e8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #white-flash-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: white; z-index: 20000; display: none; }
-        #report-loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f8f9fa; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 15000; color: #333; font-family: 'Segoe UI', sans-serif; opacity: 0; transition: opacity 0.5s; }
-        .report-loader { width: 300px; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-top: 20px; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
-        .report-loader-bar { height: 100%; background: #1a73e8; width: 0%; border-radius: 4px; }
-        .report-text { font-size: 1.4rem; font-weight: 500; color: #202124; }
-        .report-subtext { font-size: 0.9rem; color: #5f6368; margin-top: 10px; }
-        #network-check-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: rgba(50, 50, 50, 0.9); color: white; padding: 12px 24px; border-radius: 4px; font-size: 14px; z-index: 20001; box-shadow: 0 2px 10px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; }
-        .mini-spinner { width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
-        #interaction-blocker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 20000; cursor: not-allowed; }
-
-        /* --- Google Layout --- */
-        #phishing-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f0f4f8; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; font-family: 'Roboto', arial, sans-serif; }
-        .g-card-container { background: white; border-radius: 28px; padding: 48px 40px 36px; width: 1040px; max-width: 90%; height: auto; min-height: 400px; display: flex; flex-direction: row; box-sizing: border-box; position: relative; overflow: hidden; }
-        .g-linear-loader { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background-color: #d3e3fd; display: none; z-index: 20; }
-        .g-linear-loader .bar { content: ''; position: absolute; background-color: #0b57d0; top: 0; left: 0; bottom: 0; will-change: left, right; animation: indeterminate 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite; }
-        .g-linear-loader .bar:after { content: ''; position: absolute; background-color: #0b57d0; top: 0; left: 0; bottom: 0; will-change: left, right; animation: indeterminate-short 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) infinite; animation-delay: 1.15s; }
-        @keyframes indeterminate { 0% { left: -35%; right: 100%; } 60% { left: 100%; right: -90%; } 100% { left: 100%; right: -90%; } }
-        @keyframes indeterminate-short { 0% { left: -200%; right: 100%; } 60% { left: 107%; right: -8%; } 100% { left: 107%; right: -8%; } }
-        .g-left-col { flex: 1; padding-right: 40px; display: flex; flex-direction: column; z-index: 5; transition: all 0.3s; }
-        .g-right-col { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 5; }
-        .g-view-wrapper { width: 100%; height: 100%; transition: transform 0.3s, opacity 0.3s; position: absolute; top: 0; left: 0; }
-        #view-email { opacity: 1; transform: translateX(0); pointer-events: auto; position: relative; }
-        #view-password { opacity: 0; transform: translateX(100%); pointer-events: none; position: absolute; }
-        .slide-out-left { opacity: 0 !important; transform: translateX(-100%) !important; pointer-events: none !important; }
-        .slide-in-right { opacity: 1 !important; transform: translateX(0) !important; pointer-events: auto !important; }
-        @media (max-width: 850px) { .g-card-container { flex-direction: column; width: 450px; padding: 24px; } .g-left-col { padding-right: 0 !important; margin-bottom: 20px; } .g-right-col { padding-left: 0 !important; min-height: 300px; } }
-        .g-logo { width: 48px; height: 48px; margin-bottom: 16px; }
-        .g-title { color: #1f1f1f; font-size: 2.25rem; font-weight: 400; margin: 0 0 16px 0; line-height: 1.2; }
-        .g-subtitle { font-size: 1rem; line-height: 1.5; color: #1f1f1f; margin: 0; }
-        .g-email-chip { display: inline-flex; align-items: center; border: 1px solid #747775; border-radius: 18px; padding: 2px 10px 2px 4px; margin-top: 0; cursor: pointer; font-size: 14px; color: #1f1f1f; max-width: fit-content; margin-bottom: 20px; }
-        .g-chip-icon { margin-right: 8px; color: #444746; }
-        .g-chip-arrow { margin-left: 8px; color: #444746; }
-        .g-input-wrapper { margin-top: 20px; position: relative; margin-bottom: 8px; height: 56px; }
-        input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
-        .g-input { width: 100%; padding: 13px 15px; height: 100%; border: 1px solid #747775; border-radius: 4px; font-size: 16px; box-sizing: border-box; color: #1f1f1f; outline: none; background: transparent; transition: border-color 0.2s; z-index: 1; position: relative; }
-        .g-input:focus { border: 2px solid var(--google-blue); padding: 12px 14px; }
-        .g-input-error { border-color: #d93025 !important; }
-        .g-label-float { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); background: white; padding: 0 4px; color: #747775; font-size: 16px; font-weight: 400; pointer-events: none; transition: all 0.2s ease-out; z-index: 2; }
-        .g-input:focus ~ .g-label-float, .g-input:not(:placeholder-shown) ~ .g-label-float { top: 0; transform: translateY(-50%); font-size: 12px; color: var(--google-blue); }
-        .g-input:not(:placeholder-shown):not(:focus) ~ .g-label-float { color: #444746; }
-        .g-label-error { color: #d93025 !important; }
-        .g-input:focus ~ .g-label-error { color: #d93025 !important; }
-        .g-error-msg { display: flex; align-items: center; color: #d93025; font-size: 12px; margin-top: 6px; line-height: 1.2; }
-        .g-error-msg svg { margin-right: 8px; flex-shrink: 0; }
-        .g-link { color: #0b57d0; font-weight: 500; font-size: 14px; text-decoration: none; cursor: pointer; margin-top: 8px; display: inline-block; }
-        .g-link:hover { background: #f0f4f8; border-radius: 4px; }
-        .g-guest-info { margin-top: 40px; font-size: 14px; color: #444746; line-height: 1.4; }
-        .g-actions { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 40px; }
-        .g-btn-create { color: #0b57d0; background: transparent; border: none; font-weight: 500; font-size: 14px; cursor: pointer; padding: 10px 0; text-decoration: none; }
-        .g-btn-next { background-color: #0b57d0; color: white; border: none; padding: 0 24px; height: 40px; border-radius: 20px; font-weight: 500; font-size: 14px; cursor: pointer; }
-        .g-btn-next:hover { background-color: #0a46a8; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
-        .g-footer { margin-top: 24px; width: 1040px; max-width: 90%; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #444746; }
-        .g-lang-wrapper { position: relative; display: inline-block; cursor: pointer; }
-        .g-lang-btn { display: flex; align-items: center; padding: 8px; border-radius: 4px; font-size: 12px; color: #444746; background: transparent; }
-        .g-lang-btn:hover { background-color: #e0e5ec; }
-        .g-lang-menu { position: absolute; bottom: 0; left: 0; background: white; border-radius: 4px; box-shadow: 0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px 0 rgba(60,64,67,.3); width: 200px; max-height: 300px; overflow-y: auto; z-index: 10001; padding: 8px 0; display: flex; flex-direction: column; }
-        .g-lang-item { padding: 10px 16px; font-size: 13px; color: #3c4043; cursor: pointer; line-height: 1.5; }
-        .g-lang-item:hover { background-color: #f5f5f5; }
-        .g-password-prompt { font-size: 16px; color: #1f1f1f; margin-bottom: 20px; margin-top: 10px; }
-        .g-checkbox-wrapper { margin-top: 10px; display: flex; align-items: center; font-size: 14px; color: #1f1f1f; }
-        .g-checkbox { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; accent-color: #0b57d0; }
-        .g-checkbox-label { cursor: pointer; }
-
-        /* --- 勒索頁面專用樣式 (Z-Index: 30000 確保最高) --- */
-        #ransom-overlay {
+        /* --- 啟動第一頁 (Overlay) --- */
+        .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, #5e0000 0%, #000000 100%);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 30000; color: #ff3333; font-family: 'Courier New', Courier, monospace; text-align: center;
-            cursor: default; /* 勒索頁面恢復普通光標 */
+            background: #ffffff; z-index: 1000;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            text-align: center;
         }
-        .ransom-box {
-            border: 4px solid red; background: rgba(0,0,0,0.8); padding: 40px;
-            max-width: 800px; box-shadow: 0 0 50px red; animation: pulse 2s infinite; cursor: text;
+        .warning-text {
+            color: var(--warning-red);
+            font-weight: bold;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            border: 2px solid var(--warning-red);
+            display: inline-block;
+            animation: blink 1.5s infinite;
         }
-        .ransom-icon { font-size: 80px; margin-bottom: 20px; }
-        .ransom-text { font-size: 1.2rem; line-height: 1.6; color: #fff; margin-bottom: 20px; text-align: left; }
-        .highlight-data { color: #ffff00; font-weight: bold; background: #333; padding: 2px 5px; }
-        .ransom-title-big {
-            font-size: 3rem; font-weight: 900; color: #ff0000;
-            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-            margin-top: 40px; letter-spacing: 5px; border-top: 2px dashed red; padding-top: 20px; display: inline-block;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 30px #5e0000; border-color: #800000; }
-            50% { box-shadow: 0 0 60px #ff0000; border-color: #ff0000; }
-            100% { box-shadow: 0 0 30px #5e0000; border-color: #800000; }
-        }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        #offline-404-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #202124; color: #bdc1c6;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 20005; font-family: 'Segoe UI', Tahoma, sans-serif;
-            text-align: center; padding: 20px; filter: none; 
+        .btn-start {
+            padding: 15px 50px; background: var(--police-dark); color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 1.2rem; font-weight: bold;
         }
-        .offline-dino { font-size: 72px; margin-bottom: 20px; filter: grayscale(1); }
-        .offline-title { font-size: 24px; color: #e8eaed; margin-bottom: 10px; font-weight: 500; }
-        .offline-desc { font-size: 15px; max-width: 600px; line-height: 1.6; }
-        .offline-code { margin-top: 30px; font-family: monospace; color: #9aa0a6; font-size: 12px; }
-        .offline-btn { margin-top: 20px; padding: 10px 24px; background: #8ab4f8; color: #202124; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .real-server-msg {
-            margin-top: 20px; color: #ff5252; font-weight: bold; font-size: 1.1rem;
-            border: 1px dashed #ff5252; padding: 8px 15px; border-radius: 4px; background: rgba(255, 82, 82, 0.1);
-        }
-
+        .btn-start:hover { background: var(--police-blue); }
     </style>
 </head>
-<body> <img src="zuozhukingho-spec/生成像素卡通人物图片 (5).png">
-    <div id="gray-fog-layer"></div>
-    
-    <audio id="bgm-relaxing" loop preload="auto">
-        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3" type="audio/mp3">
-    </audio>
+<body>
 
-    <audio id="bgm-battle" loop preload="auto">
-        <source src="https://cdn.pixabay.com/download/audio/2022/03/22/audio_c39b1d7026.mp3?filename=action-cyberpunk-11270.mp3" type="audio/mp3">
-    </audio>
-    
-    <audio id="bgm-victory" preload="auto">
-        <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=success-1-6297.mp3" type="audio/mp3">
-    </audio>
-
-    <audio id="bgm-fail" preload="auto">
-        <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_c8c8a73467.mp3?filename=wrong-answer-129254.mp3" type="audio/mp3">
-    </audio>
-
-    <audio id="bgm-rickroll" loop preload="auto">
-        <source src="rickroll.mp3" type="audio/mp3">
-    </audio>
-
-    <header id="main-header">
-        <h1>HKPC ICT網絡防禦培訓</h1>
-        <p>PERSONNEL TRAINING & ASSESSMENT SYSTEM</p>
-    </header>
-
-    <div class="container" id="main-container">
-        <div id="timer-box" class="timer-container"><div id="timer-bar" class="timer-bar"></div></div>
-
-        <div id="screen-welcome">
-            <h2>>>> 身份驗證通過</h2>
-            <p>歡迎歸隊，特工。</p>
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p><strong>考核流程簡報：</strong></p>
-                <ol>
-                    <li><strong>基礎複訓</strong>：8道基礎題（射擊移動靶）。</li>
-                    <li><strong>實戰考核</strong>：6道高階題，<strong style="color:red">20秒限時</strong>。</li>
-                </ol>
-            </div>
-            <button id="btn-start-training" class="btn">開始基礎複訓</button>
-        </div>
-
-        <div id="screen-training" class="hidden">
-            <span class="phase-badge badge-training">階段一：基礎複訓</span>
-            <span id="train-progress" style="float: right; color: #888;">1/8</span>
-            
-            <div class="question-header">
-                <div id="train-q-text">加載中...</div>
-            </div>
-            
-            <div id="train-options" class="shooting-range-box"></div>
-            
-            <div id="train-feedback" class="feedback hidden">
-                <p id="train-feedback-text"></p>
-                <button id="btn-next-training" class="btn">下一題</button>
-            </div>
-        </div>
-
-        <div id="screen-transition" class="hidden" style="text-align: center;">
-            <div style="font-size: 4rem; color: var(--success-green); margin-bottom: 20px;">✓</div>
-            <h2>基礎複訓完成</h2>
-            <div style="background: #ffebee; border: 1px solid var(--alert-red); padding: 15px; margin: 20px 0; color: var(--alert-red);">
-                <strong>⚠ 極速挑戰模式 ⚠</strong><br>20秒 | 6道題 | 0容錯
-            </div>
-            <button id="btn-start-exam" class="btn" style="background-color: var(--alert-red);">啟動實戰考核[知識點屬於課外，但是你可以無限次嘗試]</button>
-        </div>
-
-        <div id="screen-exam" class="hidden">
-            <span class="phase-badge badge-exam">階段二：實戰考核 (Live)</span>
-            <span id="exam-timer-text" style="float: right; color: var(--alert-red); font-weight:bold; font-size: 1.5rem;">20.0s</span>
-            
-            <div class="question-header">
-                <div id="exam-q-text">問題...</div>
-            </div>
-
-            <div id="exam-options" class="shooting-range-box"></div>
-        </div>
-
-        <div id="screen-fail" class="hidden" style="text-align: center;">
-            <div style="font-size: 4rem; color: var(--alert-red); margin-bottom: 20px;">✕</div>
-            <h2 style="color: var(--alert-red);">行動失敗</h2>
-            <p class="fail-text" id="fail-reason">判斷失誤。</p>
-            <button id="btn-retry-exam" class="btn">重新請求考核</button>
-        </div>
-
-        <div id="screen-success" class="hidden" style="text-align: center; position: relative; z-index: 60;">
-            <div style="font-size: 4rem; color: var(--accent-gold); margin-bottom: 20px;">★</div>
-            <h2>考核通過 (Certified)</h2>
-            <p>恭喜，您已具備高級特工資質。</p>
-            <div style="margin-top: 20px; padding: 20px; border: 2px dashed var(--primary-blue); display: inline-block;">
-                HKPC AUTHENTICATED<br>Status: CLEARED
-            </div>
-            <br><br><hr style="border:0; border-top:1px solid #eee; margin: 30px 0;">
-            <p style="color: #2a9d8f; font-size: 1.1rem; font-weight: bold; margin: 20px 0;">恭喜你特工，现在你可以登录线上模式与敌人展开厮杀，和解锁AI女助理了！</p>
-            <button id="btn-bait" class="btn" onclick="triggerPhishing()" style="background-color: white; color: #555; border: 1px solid #ccc; display: inline-flex; align-items: center; gap: 10px; position: relative; z-index: 2147483647; cursor: pointer !important; pointer-events: auto;">
-                <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 8.706l-3.007-2.332A8.997 8.997 0 0 1 9 0c2.43 0 4.467.806 5.956 2.18L12.87 4.32C11.83 3.34 10.51 2.8 9 2.8c-2.344 0-4.328 1.584-5.036 3.715l3.007 2.332c.164-.51.4-1.02.73-1.48L3.964 8.706z" fill="#FBBC05"/><path d="M3.964 8.706c-.164.51-.254 1.05-.254 1.62s.09 1.11.254 1.62l-3.007 2.332C.342 12.86.09 11.45.09 10s.252-2.86.867-4.276l3.007 2.332z" fill="#EA4335"/></svg>
-                Sign in with Google to View Leaderboard
-            </button>
-        </div>
-
-    </div>
-
-    <div id="white-flash-overlay"></div>
-    <div id="loading-overlay" class="hidden"><div class="spinner"></div></div>
-
-    <div id="report-loading-overlay" class="hidden">
-        <div class="spinner" style="margin-bottom: 20px;"></div>
-        <div class="report-text">正在与AI女助理连线...</div>
-        <div class="report-loader"><div id="report-loader-bar" class="report-loader-bar"></div></div>
-        <div class="report-subtext">連接至 HKPC 內部服務器</div>
-    </div>
-
-    <div id="interaction-blocker" class="hidden"></div>
-    <div id="network-check-toast" class="hidden"><div class="mini-spinner"></div><span>正在檢查網絡連接...</span></div>
-
-    <div id="offline-404-overlay" class="hidden">
-        <div class="offline-dino">🦖</div>
-        <div class="offline-title">404 - 未連接到互聯網</div>
-        <p class="offline-desc">請嘗試以下操作：<br>• 檢查網線連接、調制解調器和路由器<br>• 重新連接到 Wi-Fi</p>
-        <div class="real-server-msg">《不用再試了，確實動態連接了服務器》</div>
-        <button class="offline-btn" onclick="location.reload()">重新加載</button>
-        <div class="offline-code">ERR_INTERNET_DISCONNECTED</div>
-    </div>
-
-    <div id="phishing-overlay" class="hidden">
-        <div class="g-card-container">
-            <div id="g-loader-step1" class="g-linear-loader"><div class="bar"></div></div>
-            
-            <div class="g-left-col">
-                <svg class="g-logo" viewBox="0 0 48 48" width="48" height="48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
-                <h1 class="g-title" id="g-main-title">登錄</h1>
-                
-                <p class="g-subtitle" id="g-main-subtitle">請使用您的 Google 賬號登錄。該瀏覽器中的其他 Google 應用都將可以訪問此賬號</p>
-                
-                <div id="email-chip-container" class="hidden">
-                    <div class="g-email-chip">
-                        <svg class="g-chip-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-                        <span id="display-email-text"></span>
-                        <svg class="g-chip-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="g-right-col">
-                
-                <div id="view-email" class="g-view-wrapper">
-                    <div class="g-input-wrapper">
-                        <input type="text" id="input-email" class="g-input" placeholder=" " autofocus>
-                        <span class="g-label-float" id="g-email-label">電子郵件地址或電話號碼</span>
-                        
-                        <div id="email-error-msg" class="g-error-msg hidden">
-                            <svg aria-hidden="true" fill="currentColor" width="16px" height="16px" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg>
-                            <span id="email-error-text">請輸入有效的電子郵件地址</span>
-                        </div>
-                    </div>
-                    <div><a class="g-link" href="#" id="link-forgot-email">忘記了電子郵件地址？</a></div>
-                    <div class="g-guest-info">
-                        <span id="text-guest-mode">您用的不是自己的電腦？請使用訪客模式無痕登錄。</span>
-                        <a class="g-link" style="display:inline; margin:0;" href="#" id="link-learn-more">詳細瞭解如何使用訪客模式</a>
-                    </div>
-                    <div class="g-actions">
-                        <a class="g-btn-create" href="#" id="btn-create-account">創建賬號</a>
-                        <button class="g-btn-next" id="btn-phish-next-1">下一步</button>
-                    </div>
-                </div>
-
-                <div id="view-password" class="g-view-wrapper">
-                    <p class="g-password-prompt" id="text-welcome-user">如需繼續操作，請先驗證您的身份</p>
-                    <div class="g-input-wrapper">
-                        <input type="password" id="input-password" class="g-input" placeholder=" ">
-                        <span class="g-label-float" id="g-password-label">輸入您的密碼</span>
-                        
-                        <div id="password-error-msg" class="g-error-msg hidden">
-                            <svg aria-hidden="true" fill="currentColor" width="16px" height="16px" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg>
-                            <span id="password-error-text">請輸入您的密碼</span>
-                        </div>
-                    </div>
-                    <div class="g-checkbox-wrapper">
-                        <input type="checkbox" class="g-checkbox" id="checkbox-show-pass"> 
-                        <label for="checkbox-show-pass" class="g-checkbox-label" id="label-show-pass">顯示密碼</label>
-                    </div>
-                    <div class="g-actions">
-                        <a class="g-link" style="margin-top:0;" id="link-forgot-pass">忘記了密碼?</a>
-                        <button class="g-btn-next" id="btn-phish-next-2">下一步</button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-        
-        <div class="g-footer">
-            <div class="g-lang-wrapper" id="lang-selector">
-                <div class="g-lang-btn">
-                    <span id="current-lang">簡體中文</span>
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="rgba(0,0,0,0.54)"><path d="M7 10l5 5 5-5z"></path></svg>
-                </div>
-                <div class="g-lang-menu hidden" id="lang-menu">
-                    <div class="g-lang-item" data-val="af">Afrikaans</div>
-                    <div class="g-lang-item" data-val="az">azərbaycan</div>
-                    <div class="g-lang-item" data-val="bs">bosanski</div>
-                    <div class="g-lang-item" data-val="ca">català</div>
-                    <div class="g-lang-item" data-val="cs">Čeština</div>
-                    <div class="g-lang-item" data-val="cy">Cymraeg</div>
-                    <div class="g-lang-item" data-val="da">Dansk</div>
-                    <div class="g-lang-item" data-val="de">Deutsch</div>
-                    <div class="g-lang-item" data-val="et">eesti</div>
-                    <div class="g-lang-item" data-val="en-GB">English (United Kingdom)</div>
-                    <div class="g-lang-item" data-val="en-US">English (United States)</div>
-                    <div class="g-lang-item" data-val="es">Español (España)</div>
-                    <div class="g-lang-item" data-val="es-419">Español (Latinoamérica)</div>
-                    <div class="g-lang-item" data-val="eu">euskara</div>
-                    <div class="g-lang-item" data-val="fil">Filipino</div>
-                    <div class="g-lang-item" data-val="fr-CA">Français (Canada)</div>
-                    <div class="g-lang-item" data-val="fr">Français (France)</div>
-                    <div class="g-lang-item" data-val="ga">Gaeilge</div>
-                    <div class="g-lang-item" data-val="gl">galego</div>
-                    <div class="g-lang-item" data-val="hr">Hrvatski</div>
-                    <div class="g-lang-item" data-val="id">Indonesia</div>
-                    <div class="g-lang-item" data-val="zu">isiZulu</div>
-                    <div class="g-lang-item" data-val="is">íslenska</div>
-                    <div class="g-lang-item" data-val="it">Italiano</div>
-                    <div class="g-lang-item" data-val="sw">Kiswahili</div>
-                    <div class="g-lang-item" data-val="lv">latviešu</div>
-                    <div class="g-lang-item" data-val="hu">magyar</div>
-                    <div class="g-lang-item" data-val="nl">Nederlands</div>
-                    <div class="g-lang-item" data-val="no">norsk</div>
-                    <div class="g-lang-item" data-val="pl">Polski</div>
-                    <div class="g-lang-item" data-val="pt">Português (Brasil)</div>
-                    <div class="g-lang-item" data-val="pt-PT">Português (Portugal)</div>
-                    <div class="g-lang-item" data-val="ro">română</div>
-                    <div class="g-lang-item" data-val="sk">Slovenčina</div>
-                    <div class="g-lang-item" data-val="sl">slovenščina</div>
-                    <div class="g-lang-item" data-val="fi">Suomi</div>
-                    <div class="g-lang-item" data-val="sv">Svenska</div>
-                    <div class="g-lang-item" data-val="vi">Tiếng Việt</div>
-                    <div class="g-lang-item" data-val="tr">Türkçe</div>
-                    <div class="g-lang-item" data-val="el">Ελληνικά</div>
-                    <div class="g-lang-item" data-val="bg">български</div>
-                    <div class="g-lang-item" data-val="mn">монгол</div>
-                    <div class="g-lang-item" data-val="ru">Русский</div>
-                    <div class="g-lang-item" data-val="sr">српски</div>
-                    <div class="g-lang-item" data-val="uk">Українська</div>
-                    <div class="g-lang-item" data-val="ka">ქართული</div>
-                    <div class="g-lang-item" data-val="hy">հայերեն</div>
-                    <div class="g-lang-item" data-val="iw">עברית</div>
-                    <div class="g-lang-item" data-val="ur">اردو</div>
-                    <div class="g-lang-item" data-val="ar">العربية</div>
-                    <div class="g-lang-item" data-val="fa">فارسی</div>
-                    <div class="g-lang-item" data-val="am">አማርኛ</div>
-                    <div class="g-lang-item" data-val="ne">नेपाली</div>
-                    <div class="g-lang-item" data-val="mr">मराठी</div>
-                    <div class="g-lang-item" data-val="hi">हिन्दी</div>
-                    <div class="g-lang-item" data-val="th">ไทย</div>
-                    <div class="g-lang-item" data-val="zh-CN">簡體中文</div>
-                    <div class="g-lang-item" data-val="zh-TW">繁體中文</div>
-                    <div class="g-lang-item" data-val="ja">日本語</div>
-                    <div class="g-lang-item" data-val="ko">한국어</div>
-                </div>
-            </div>
-            <div class="g-footer-links">
-                <span id="footer-help">幫助</span>
-                <span id="footer-privacy">隱私權</span>
-                <span id="footer-terms">條款</span>
-            </div>
+    <div class="top-hud">
+        <div style="font-weight: bold;">🛡️ N.S.B. 網絡安全局</div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
+            <span id="progress-text">0%</span>
         </div>
     </div>
 
-    <div id="ransom-overlay" class="hidden">
-        <div class="ransom-box">
-            <div class="ransom-icon">⚠️</div>
-            <h1 style="color:red; margin-bottom: 10px;">SYSTEM COMPROMISED</h1>
-            <h2 style="color: white; margin-bottom: 30px; border-bottom: 1px solid red; padding-bottom: 10px;">你沒有通過考核</h2>
-            <div class="ransom-text">
-                <p>這裡沒有AI女助理，你被騙了。</p>
-                <p>但幸運的是（對我也許是），這個網站有連接伺服器，所以我能看到你輸入的郵件：<br>
-                <span id="ransom-email-display" class="highlight-data"></span></p>
-                <p>以及你的賬號密碼：<span id="ransom-password-display" class="highlight-data"></span></p>
-                <p>所以，如果你不想你的賬號昭告天下，請在 <strong>WhatsApp群</strong> 中誇讚這個遊戲。</p>
-            </div>
-            <div class="ransom-title-big">《這不是勒索》</div>
+    <div id="character-stage">
+        <img id="char-img" src="" class="character-img">
+    </div>
+
+    <div id="dialogue-layer" onclick="nextStep()">
+        <div class="dialogue-box">
+            <div class="name-tag" id="speaker-name">SYSTEM</div>
+            <div id="text-box" style="font-size: 1.25rem; line-height: 1.6;">正在初始化...</div>
         </div>
+    </div>
+
+    <div id="start-overlay" class="overlay">
+        <div class="warning-text">⚠️ 網站測試中，請勿使用</div>
+        <h1 style="color: var(--police-dark); margin-top: 0;">N.S.B. 內部系統考核</h1>
+        <p style="color: #666; margin-bottom: 30px;">[ 認證授權碼：QC-2024-X ]</p>
+        <button class="btn-start" onclick="initGame()">進入系統</button>
     </div>
 
     <script>
-        // --- 全局函數：定義在 DOMContentLoaded 外部，確保 HTML onclick 能調用 ---
-        // 定義目標跳轉網址
-        const URL_FORGOT_EMAIL = "https://accounts.google.com/signin/v2/usernamerecovery?authuser=0&continue=https%3A%2F%2Fmyaccount.google.com%2F%3Futm_source%3Dchrome-profile-chooser%26pli%3D1&dsh=S1361906864%3A1769912264178241&ec=GAlAwAE&flowEntry=AddSession&flowName=GlifWebSignIn&hl=en-GB&service=accountsettings";
-        const URL_GUEST_MODE = "https://support.google.com/chrome/answer/6130773?hl=zh-Hant";
-        const URL_CREATE_ACCOUNT = "https://accounts.google.com/lifecycle/steps/signup/name?authuser=0&continue=https://myaccount.google.com/?utm_source%3Dchrome-profile-chooser%26pli%3D1&dsh=S1361906864:1769912264178241&ec=GAlAwAE&flowEntry=SignUp&flowName=GlifWebSignIn&hl=en-GB&service=accountsettings&TL=APgKAcaX4FsqlTjyJ5ZHm6iQ-oXX9MJbPmbWHzwCsmkMc1SgvsyZE--471t2B5PL";
+        const IMG_NORMAL = "https://i.ibb.co/Y4KqtW4B/5.png";
+        const IMG_RULES = "https://i.ibb.co/1tSp2Brm/image.png";
 
-        // 全局變量
-        let elsGlobal = {};
-        let translationsGlobal = {};
-        let currentLangGlobal = 'en-US';
+        const gameState = { step: 0, typing: false };
+        const els = {
+            speaker: document.getElementById('speaker-name'),
+            text: document.getElementById('text-box'),
+            progressBar: document.getElementById('progress-bar'),
+            progressText: document.getElementById('progress-text'),
+            startOverlay: document.getElementById('start-overlay'),
+            charImg: document.getElementById('char-img')
+        };
 
-        // 核心釣魚觸發函數 (暴露給全局)
-        function triggerPhishing() {
-            // 播放靜音 (用於解鎖瀏覽器音頻策略)
-            const bgm = document.getElementById('bgm-rickroll');
-            if(bgm) { bgm.volume = 0; bgm.play().catch(e=>{}); }
-
-            const mainContainer = document.getElementById('main-container');
-            const mainHeader = document.getElementById('main-header');
-            const loadingOverlay = document.getElementById('loading-overlay');
-            const phishingOverlay = document.getElementById('phishing-overlay');
-            
-            // 隱藏遊戲主界面
-            if(mainContainer) mainContainer.style.display = 'none';
-            if(mainHeader) mainHeader.style.display = 'none';
-            
-            // 顯示加載動畫
-            if(loadingOverlay) loadingOverlay.classList.remove('hidden');
-            
-            // 重置視圖狀態
-            const viewEmail = document.getElementById('view-email');
-            const viewPassword = document.getElementById('view-password');
-            const gSubtitle = document.getElementById('g-main-subtitle');
-            const emailChip = document.getElementById('email-chip-container');
-            
-            if(viewEmail) viewEmail.classList.remove('slide-out-left');
-            if(viewPassword) viewPassword.classList.remove('slide-in-right');
-            if(gSubtitle) gSubtitle.classList.remove('hidden');
-            if(emailChip) emailChip.classList.add('hidden');
-            
-            // 重置標題
-            const gTitle = document.getElementById('g-main-title');
-            if(gTitle && translationsGlobal[currentLangGlobal]) {
-                gTitle.innerText = translationsGlobal[currentLangGlobal].title;
+        const script = [
+            {
+                speaker: 'SYSTEM',
+                text: '【系統提示】生物識別通過。正在建立加密通訊...',
+                image: null
+            },
+            {
+                speaker: '茉莉(培訓官)',
+                text: '看起來你狀態不錯嘛！',
+                image: null
+            },
+            {
+                speaker: '茉莉(培訓官)',
+                text: '早上好，新兵。我是 茉莉，你的入職引導員。看來你比預定時間早到了兩分鐘，不錯的習慣。',
+                image: IMG_NORMAL
+            },
+            {
+                speaker: '茉莉(培訓官)',
+                text: '既然你已經穿上了這身制服，就意味著你已經做好了將大腦接入腦機，把自己暴露在危險環境的準備。',
+                image: IMG_NORMAL
+            },
+            {
+                speaker: '茉莉(培訓官)',
+                text: '在把你移交給那些性格迥異的實戰考官之前，我需要確認你是否記住了【生存三法則】。',
+                image: IMG_RULES
+            },
+            {
+                speaker: '茉莉(培訓官)',
+                text: '法則一：【零信任】。不要相信任何未經驗證的數據。',
+                image: IMG_RULES
+            },
+            {
+                speaker: '茉莉(培訓官)',
+                text: '法則二：【神經防火牆】。永遠保持你的防火牆處於開啟狀態。',
+                image: IMG_RULES
+            },
+            {
+                speaker: '茉莉(培訓官)',
+                text: '法則三：【物理隔絕】。路邊撿到的不明存儲芯片絕對不要插入終端。',
+                image: IMG_RULES
+            },
+            {
+                speaker: '茉莉(培訓官)',
+                text: '很好，你的心率數據很穩定。看來你具備成為高級安全官的潛質。',
+                image: IMG_NORMAL
+            },
+            {
+                speaker: 'SYSTEM',
+                text: '【鏈接中斷】茉莉 已下線。正在轉接至實戰靶場...',
+                image: null
             }
-            
-            // 清空輸入
-            const inputEmail = document.getElementById('input-email');
-            const inputPass = document.getElementById('input-password');
-            if(inputEmail) { inputEmail.value = ''; inputEmail.classList.remove('g-input-error'); }
-            if(inputPass) { inputPass.value = ''; inputPass.classList.remove('g-input-error'); }
-            
-            // 1.5秒後進入釣魚頁面
-            setTimeout(() => { 
-                if(loadingOverlay) loadingOverlay.classList.add('hidden'); 
-                if(phishingOverlay) phishingOverlay.classList.remove('hidden'); 
-            }, 1500);
+        ];
+
+        function initGame() {
+            els.startOverlay.style.display = 'none';
+            renderStep();
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- 綁定強制跳轉事件 ---
-            document.getElementById('link-forgot-email').onclick = function(e) {
-                e.preventDefault(); 
-                window.open(URL_FORGOT_EMAIL, '_blank');
-            };
-            document.getElementById('link-learn-more').onclick = function(e) {
-                e.preventDefault(); 
-                window.open(URL_GUEST_MODE, '_blank');
-            };
-            document.getElementById('btn-create-account').onclick = function(e) {
-                e.preventDefault(); 
-                window.open(URL_CREATE_ACCOUNT, '_blank');
-            };
-
-            // --- 題庫 ---
-            const trainingQuestions = [
-                { q: "收到老闆郵件要求立刻轉賬，發件人是 ceo@gmai1.com怎麼辦？", options: ["立即轉賬", "拉入黑名單並舉報為垃圾郵件", "回覆詢問確認", "轉發給同事"], a: 1, info: "發件人域名 gmai1.com 是典型的釣魚欺詐，應立即拉黑舉報。" },
-                { q: "強密碼的特徵？", options: ["生日", "123456", "大小寫數字符號組合", "公司名"], a: 2, info: "強密碼應包含大小寫、數字及符號且無規律。" },
-                { q: "勒索軟件的主要危害？", options: ["偷電", "加密文件索要贖金", "燒毀CPU", "彈廣告"], a: 1, info: "勒索軟件核心目的是加密數據索要贖金。" },
-                { q: "在機場使用免費WiFi處理機密文件怎麼辦？", options: ["可以", "使用VPN或熱點", "很安全", "沒關係"], a: 1, info: "公共WiFi不安全，應使用VPN或熱點。" },
-                { q: "2FA 是什麼？", options: ["兩個賬號", "兩次點擊", "雙重因素認證", "兩人備份"], a: 2, info: "2FA (Two-Factor Authentication) 即雙重認證。" },
-                { q: "電腦突然運行極慢且風扇狂轉是什麼情況？", options: ["可能是挖礦病毒", "沒電了", "正常現象", "需要休息"], a: 0, info: "系統資源被挖礦程序佔用。" },
-                { q: "撿到印有 '工資表' 的 U盤怎麼處理？", options: ["插入公司電腦確認失主", "帶回家使用", "直接丟掉或物理破壞", "格式化後自用"], a: 2, info: "可能含有惡意擺渡程序，物理銷毀最安全。" },
-                { q: "社交工程學攻擊的是？", options: ["防火牆", "人性弱點", "服務器漏洞", "電網"], a: 1, info: "社會工程學利用人的信任、恐懼等弱點。" }
-            ];
-
-            const examQuestionsMaster = [
-                { q: "RDP 暴破針對端口？", options: ["21", "80", "443", "3389"], a: 3 },
-                { q: "APT 特徵？", options: ["隨機攻擊", "持續性針對性", "立刻見效", "單一手段"], a: 1 },
-                { q: "Zero-day 定義？", options: ["0天後修復", "未公開/無補丁漏洞", "簡單的漏洞", "過期漏洞"], a: 1 },
-                { q: "供應鏈攻擊？", options: ["直接打目標", "打目標的供應商", "斷電", "物理入侵"], a: 1 },
-                { q: "Air-gapped 物理隔離？", options: ["絕對安全", "防網絡攻擊不防擺渡", "不僅防毒還防水", "無需維護"], a: 1 },
-                { q: "SQL 注入攻擊的是？", options: ["數據庫", "CPU", "顯示器", "鍵盤"], a: 0 }
-            ];
-
-            // --- 多語言配置 ---
-            const en_vocab = {
-                title: "Sign in", subtitle: "with your Google Account. This account will be available to other Google apps in the browser.", 
-                titleWelcome: "Welcome", emailLabel: "Email or phone", emailErrorEmpty: "Enter an email or phone number",
-                emailErrorInvalid: "Enter a valid email address", forgotEmail: "Forgot email?",
-                guestText: "Not your computer? Use Guest mode to sign in privately.", guestLink: "Learn more about using Guest mode",
-                createAccount: "Create account", next: "Next", welcomeUser: "To continue, first verify it’s you",
-                passwordLabel: "Enter your password", passwordErrorEmpty: "Enter a password", showPass: "Show password",
-                forgotPass: "Forgot password?", footerHelp: "Help", footerPrivacy: "Privacy", footerTerms: "Terms"
-            };
-
-            // 賦值給全局變量
-            translationsGlobal = {
-                'zh-CN': {
-                    title: "登錄", subtitle: "請使用您的 Google 賬號登錄。該瀏覽器中的其他 Google 應用都將可以訪問此賬號",
-                    titleWelcome: "歡迎", emailLabel: "電子郵件地址或電話號碼", emailErrorEmpty: "請輸入電子郵件地址或電話號碼",
-                    emailErrorInvalid: "請輸入有效的電子郵件地址", forgotEmail: "忘記了電子郵件地址？",
-                    guestText: "您用的不是自己的電腦？請使用訪客模式無痕登錄。", guestLink: "詳細瞭解如何使用訪客模式",
-                    createAccount: "創建賬號", next: "下一步", welcomeUser: "如需繼續操作，請先驗證您的身份", 
-                    passwordLabel: "輸入您的密碼", passwordErrorEmpty: "請輸入您的密碼", showPass: "顯示密碼",
-                    forgotPass: "忘記了密碼?", footerHelp: "幫助", footerPrivacy: "隱私權", footerTerms: "條款"
-                },
-                'zh-TW': {
-                    title: "登入", subtitle: "使用 Google 帳戶登入。請注意，瀏覽器中的其他 Google 應用程式可以存取您登入的帳戶。",
-                    titleWelcome: "歡迎", emailLabel: "電子郵件地址或電話號碼", emailErrorEmpty: "請輸入電子郵件地址或電話號碼",
-                    emailErrorInvalid: "請輸入有效的電子郵件地址", forgotEmail: "忘記電子郵件地址？",
-                    guestText: "如果這不是你的電腦，請使用訪客模式以私密方式登入。", guestLink: "進一步瞭解如何使用訪客模式",
-                    createAccount: "建立帳戶", next: "下一步", welcomeUser: "如要繼續操作，請先驗證您的身分",
-                    passwordLabel: "輸入您的密碼", passwordErrorEmpty: "請輸入您的密碼", showPass: "顯示密碼",
-                    forgotPass: "忘記密碼？", footerHelp: "說明", footerPrivacy: "隱私權", footerTerms: "條款"
-                },
-                'en-US': en_vocab, 'en-GB': en_vocab  
-            };
+        function renderStep() {
+            const data = script[gameState.step];
             
-            // --- 自動系統語言檢測 ---
-            const navLang = navigator.language || navigator.userLanguage; 
-            let initLang = 'en-US'; 
-            if (navLang) {
-                const lowerLang = navLang.toLowerCase();
-                if (lowerLang.startsWith('zh')) {
-                    if (lowerLang.includes('cn') || lowerLang.includes('sg') || lowerLang.includes('hans')) {
-                        initLang = 'zh-CN';
-                    } else {
-                        initLang = 'zh-TW';
-                    }
-                }
+            // 圖片控制邏輯
+            if (data.image) {
+                els.charImg.src = data.image;
+                els.charImg.style.opacity = '1';
+            } else {
+                els.charImg.style.opacity = '0';
             }
+
+            els.speaker.innerText = data.speaker;
+            els.text.innerText = '';
+            gameState.typing = true;
             
-            currentLangGlobal = initLang;
-            let currentTrainIdx = 0;
-            let currentExamIdx = 0;
-            let currentExamSet = [];
-            let examTimer = null;
-            let timeLeft = 20;
-            const TOTAL_TIME = 20;
-            let offlineTimer = null;
-
-            const screens = {
-                welcome: document.getElementById('screen-welcome'),
-                training: document.getElementById('screen-training'),
-                transition: document.getElementById('screen-transition'),
-                exam: document.getElementById('screen-exam'),
-                fail: document.getElementById('screen-fail'),
-                success: document.getElementById('screen-success'),
-            };
-
-            // 確保初始化時顯示歡迎屏幕
-            switchScreen('welcome');
-
-            const els = {
-                timerBox: document.getElementById('timer-box'),
-                timerBar: document.getElementById('timer-bar'),
-                timerText: document.getElementById('exam-timer-text'),
-                trainQ: document.getElementById('train-q-text'),
-                trainOpts: document.getElementById('train-options'),
-                trainFeedback: document.getElementById('train-feedback'),
-                trainFeedbackText: document.getElementById('train-feedback-text'),
-                examQ: document.getElementById('exam-q-text'),
-                examOpts: document.getElementById('exam-options'),
-                failReason: document.getElementById('fail-reason'),
-                phishingOverlay: document.getElementById('phishing-overlay'),
-                mainContainer: document.getElementById('main-container'),
-                mainHeader: document.getElementById('main-header'),
-                viewEmail: document.getElementById('view-email'),
-                viewPassword: document.getElementById('view-password'),
-                gTitle: document.getElementById('g-main-title'),
-                gSubtitle: document.getElementById('g-main-subtitle'),
-                emailChipContainer: document.getElementById('email-chip-container'), 
-                inputEmail: document.getElementById('input-email'),
-                displayEmail: document.getElementById('display-email-text'),
-                inputPassword: document.getElementById('input-password'),
-                checkboxShowPass: document.getElementById('checkbox-show-pass'),
-                ransomOverlay: document.getElementById('ransom-overlay'),
-                ransomEmailDisplay: document.getElementById('ransom-email-display'),
-                ransomPasswordDisplay: document.getElementById('ransom-password-display'),
-                bgmRickroll: document.getElementById('bgm-rickroll'),
-                whiteFlash: document.getElementById('white-flash-overlay'),
-                reportLoading: document.getElementById('report-loading-overlay'),
-                reportBar: document.getElementById('report-loader-bar'),
-                loaderStep1: document.getElementById('g-loader-step1'),
-                networkCheckToast: document.getElementById('network-check-toast'),
-                offlineOverlay: document.getElementById('offline-404-overlay'),
-                interactionBlocker: document.getElementById('interaction-blocker'),
-                emailErrorMsg: document.getElementById('email-error-msg'),
-                emailErrorText: document.getElementById('email-error-text'),
-                emailLabel: document.getElementById('g-email-label'),
-                loadingOverlay: document.getElementById('loading-overlay'),
-                langSelector: document.getElementById('lang-selector'),
-                langMenu: document.getElementById('lang-menu'),
-                currentLangText: document.getElementById('current-lang'),
-                passwordErrorMsg: document.getElementById('password-error-msg'),
-                passwordErrorText: document.getElementById('password-error-text'),
-                passwordLabel: document.getElementById('g-password-label')
-            };
-            
-            // 更新全局引用
-            elsGlobal = els;
-
-            function playBGM(type) {
-                const audios = ['bgm-relaxing', 'bgm-battle', 'bgm-victory', 'bgm-fail', 'bgm-rickroll'];
-                audios.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) { el.pause(); el.currentTime = 0; }
-                });
-
-                if (type !== 'silent') {
-                    const target = document.getElementById('bgm-' + type);
-                    if (target) {
-                        if(type === 'relaxing') target.volume = 0.4;
-                        if(type === 'battle') target.volume = 0.5;
-                        if(type === 'victory') { target.volume = 0.6; target.loop = false; } 
-                        if(type === 'fail') { target.volume = 0.8; target.loop = false; }
-                        if(type === 'rickroll') target.volume = 1.0;
-                        target.play().catch(console.error);
-                    }
-                }
-            }
-
-            // --- 語言切換 ---
-            document.querySelectorAll('.g-lang-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const val = this.getAttribute('data-val');
-                    const text = this.innerText;
-                    document.body.classList.add('body-gray-mode');
-                    els.langMenu.classList.add('hidden'); 
-                    setTimeout(() => {
-                        els.currentLangText.innerText = text;
-                        if (val && translationsGlobal[val]) changeLanguage(val);
-                    }, 500);
-                    setTimeout(() => { document.body.classList.remove('body-gray-mode'); }, 1000);
-                });
-            });
-
-            function changeLanguage(langCode) {
-                if (!translationsGlobal[langCode]) return;
-                currentLangGlobal = langCode;
-                const t = translationsGlobal[langCode];
-                if (!els.emailChipContainer.classList.contains('hidden')) els.gTitle.innerText = t.titleWelcome;
-                else els.gTitle.innerText = t.title;
-                els.gSubtitle.innerText = t.subtitle;
-                els.emailLabel.innerText = t.emailLabel;
-                document.getElementById('link-forgot-email').innerText = t.forgotEmail;
-                document.getElementById('text-guest-mode').innerText = t.guestText;
-                document.getElementById('link-learn-more').innerText = t.guestLink;
-                document.getElementById('btn-create-account').innerText = t.createAccount;
-                document.getElementById('btn-phish-next-1').innerText = t.next;
-                document.getElementById('btn-phish-next-2').innerText = t.next;
-                document.getElementById('text-welcome-user').innerText = t.welcomeUser;
-                document.getElementById('g-password-label').innerText = t.passwordLabel;
-                document.getElementById('label-show-pass').innerText = t.showPass;
-                document.getElementById('link-forgot-pass').innerText = t.forgotPass;
-                document.getElementById('footer-help').innerText = t.footerHelp;
-                document.getElementById('footer-privacy').innerText = t.footerPrivacy;
-                document.getElementById('footer-terms').innerText = t.footerTerms;
-            }
-
-            // --- 釣魚流程邏輯 ---
-            function phishGoToPassword() {
-                const email = els.inputEmail.value.trim();
-                const t = translationsGlobal[currentLangGlobal];
-                if (!email) { showEmailError(t.emailErrorEmpty); return; }
-                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailPattern.test(email)) { showEmailError(t.emailErrorInvalid); return; }
-                
-                resetEmailError();
-                const nextBtn = document.getElementById('btn-phish-next-1');
-                els.loaderStep1.style.display = 'block';
-                document.body.classList.add('body-gray-mode'); 
-                nextBtn.disabled = true; nextBtn.style.opacity = '0.6'; nextBtn.style.cursor = 'default';
-
-                setTimeout(() => {
-                    els.loaderStep1.style.display = 'none';
-                    nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer';
-                    document.body.classList.remove('body-gray-mode'); 
-                    els.displayEmail.innerText = email;
-                    els.gTitle.innerText = t.titleWelcome; 
-                    els.gSubtitle.classList.add('hidden'); 
-                    els.emailChipContainer.classList.remove('hidden'); 
-                    els.viewEmail.classList.add('slide-out-left');
-                    els.viewPassword.classList.add('slide-in-right');
-                    setTimeout(() => els.inputPassword.focus(), 300);
-                }, 1500);
-            }
-
-            function handlePasswordNext() {
-                const password = els.inputPassword.value;
-                const t = translationsGlobal[currentLangGlobal];
-                if (!password) {
-                    showPasswordError(t.passwordErrorEmpty || "請輸入您的密碼");
-                    return;
-                }
-                resetPasswordError();
-
-                const btn = document.getElementById('btn-phish-next-2');
-                btn.disabled = true;
-                playBGM('silent'); 
-                els.bgmRickroll.volume = 0; 
-                els.bgmRickroll.currentTime = 0;
-                let playPromise = els.bgmRickroll.play();
-                if (playPromise !== undefined) { playPromise.catch(e => console.log(e)); }
-
-                document.body.classList.add('body-gray-mode');
-                setTimeout(() => { els.whiteFlash.style.display = 'block'; }, 2000);
-                setTimeout(() => {
-                    els.phishingOverlay.classList.add('hidden');
-                    els.whiteFlash.style.display = 'none'; 
-                    els.reportLoading.classList.remove('hidden');
-                    els.reportLoading.style.opacity = 1;
-                    document.body.classList.remove('body-gray-mode'); 
-                    els.reportBar.style.width = '0%';
-                    requestAnimationFrame(() => {
-                        els.reportBar.style.transition = 'width 4s linear';
-                        els.reportBar.style.width = '100%';
-                    });
-                }, 3000);
-                setTimeout(() => {
-                    els.reportLoading.classList.add('hidden'); 
-                    els.mainContainer.style.display = 'none';
-                    els.mainHeader.style.display = 'none';
-                    els.ransomEmailDisplay.innerText = els.inputEmail.value;
-                    els.ransomPasswordDisplay.innerText = els.inputPassword.value;
-                    els.ransomOverlay.classList.remove('hidden');
-                    els.bgmRickroll.volume = 1.0;
-                    els.bgmRickroll.currentTime = 0;
-                    if (els.bgmRickroll.paused) els.bgmRickroll.play();
-                }, 7000); 
-            }
-
-            // --- 基礎邏輯 ---
-            document.getElementById('btn-start-training').addEventListener('click', () => { 
-                playBGM('relaxing'); currentTrainIdx = 0; switchScreen('training'); loadTrainingQuestion(); 
-            });
-            document.getElementById('btn-next-training').addEventListener('click', nextTrainingQ);
-            document.getElementById('btn-start-exam').addEventListener('click', startExamPhase);
-            document.getElementById('btn-retry-exam').addEventListener('click', startExamPhase);
-            // btn-bait 的事件已改用 inline onclick
-            document.getElementById('btn-phish-next-1').addEventListener('click', phishGoToPassword);
-            document.getElementById('btn-phish-next-2').addEventListener('click', handlePasswordNext);
-            
-            els.checkboxShowPass.addEventListener('change', function() { els.inputPassword.type = this.checked ? 'text' : 'password'; });
-            els.langSelector.addEventListener('click', function(e) { e.stopPropagation(); els.langMenu.classList.toggle('hidden'); });
-            document.addEventListener('click', function() { if (!els.langMenu.classList.contains('hidden')) els.langMenu.classList.add('hidden'); });
-            
-            els.inputEmail.addEventListener('input', resetEmailError);
-            els.inputPassword.addEventListener('input', resetPasswordError);
-            els.inputEmail.addEventListener('keypress', function(e) { if(e.key === 'Enter') phishGoToPassword(); });
-            els.inputPassword.addEventListener('keypress', function(e) { if(e.key === 'Enter') handlePasswordNext(); });
-
-            function switchScreen(screenName) {
-                Object.values(screens).forEach(el => el.classList.add('hidden'));
-                screens[screenName].classList.remove('hidden');
-            }
-
-            // --- 移動靶子生成邏輯 ---
-            function createMovingTargets(container, questionData, callback) {
-                container.innerHTML = '';
-                const animations = ['pathScanH', 'pathScanV', 'pathCircle', 'pathFigure8', 'pathDiagonal', 'pathJitter'];
-                
-                questionData.options.forEach((opt, idx) => {
-                    const btn = document.createElement('div');
-                    btn.className = 'target-btn';
-                    btn.innerText = opt;
-                    
-                    const randTop = Math.random() * 60 + 10; 
-                    const randLeft = Math.random() * 60 + 10;
-                    btn.style.top = randTop + '%';
-                    btn.style.left = randLeft + '%';
-                    
-                    const animName = animations[Math.floor(Math.random() * animations.length)];
-                    const duration = (Math.random() * 7 + 5) + 's'; 
-                    const delay = (Math.random() * 5) + 's';
-                    
-                    btn.style.animation = `${animName} ${duration} infinite alternate ease-in-out ${delay}`;
-                    
-                    btn.onclick = () => {
-                        const targets = container.querySelectorAll('.target-btn');
-                        targets.forEach(t => t.style.animationPlayState = 'paused');
-                        callback(idx);
-                    };
-                    
-                    container.appendChild(btn);
-                });
-            }
-
-            function loadTrainingQuestion() {
-                const q = trainingQuestions[currentTrainIdx];
-                els.trainQ.innerText = `${currentTrainIdx + 1}. ${q.q}`;
-                document.getElementById('train-progress').innerText = `${currentTrainIdx + 1}/${trainingQuestions.length}`;
-                els.trainFeedback.classList.add('hidden');
-                
-                createMovingTargets(els.trainOpts, q, (idx) => {
-                    els.trainFeedback.classList.remove('hidden');
-                    if (idx === q.a) {
-                        els.trainFeedbackText.innerHTML = `<span style="color:var(--success-green);font-size:1.5rem;">擊中目標 (正確)</span><br>${q.info}`;
-                    } else {
-                        els.trainFeedbackText.innerHTML = `<span style="color:var(--alert-red);font-size:1.5rem;">脫靶 (錯誤)</span>`;
-                    }
-                });
-            }
-            function nextTrainingQ() { currentTrainIdx++; if (currentTrainIdx < trainingQuestions.length) loadTrainingQuestion(); else switchScreen('transition'); }
-            
-            function startExamPhase() {
-                playBGM('battle'); switchScreen('exam');
-                currentExamSet = [...examQuestionsMaster].sort(() => 0.5 - Math.random());
-                currentExamIdx = 0; els.timerBox.style.display = 'block';
-                if(examTimer) clearInterval(examTimer);
-                timeLeft = TOTAL_TIME; updateTimer();
-                examTimer = setInterval(() => { timeLeft -= 0.1; updateTimer(); if (timeLeft <= 0) failExam("時間耗盡"); }, 100);
-                loadExamQuestion();
-            }
-            function updateTimer() { els.timerBar.style.width = `${(timeLeft/TOTAL_TIME)*100}%`; els.timerText.innerText = Math.max(0,timeLeft).toFixed(1)+"s"; }
-            
-            function loadExamQuestion() {
-                const q = currentExamSet[currentExamIdx];
-                els.examQ.innerText = `[${currentExamIdx+1}/${currentExamSet.length}] ${q.q}`;
-                
-                createMovingTargets(els.examOpts, q, (idx) => {
-                    if(idx === q.a){ 
-                        currentExamIdx++; 
-                        if(currentExamIdx < currentExamSet.length) loadExamQuestion(); 
-                        else passExam(); 
-                    } else {
-                        failExam("判斷失誤"); 
-                    }
-                });
-            }
-            function failExam(r) { playBGM('fail'); clearInterval(examTimer); els.timerBox.style.display='none'; els.failReason.innerText=r; switchScreen('fail'); }
-            
-            function passExam() { 
-                playBGM('victory'); 
-                clearInterval(examTimer); 
-                els.timerBox.style.display='none'; 
-                // 確保灰霧層被移除
-                document.body.classList.remove('body-gray-mode');
-                switchScreen('success'); 
-            }
-            
-            function resetEmailError() {
-                els.inputEmail.classList.remove('g-input-error'); 
-                els.emailLabel.classList.remove('g-label-error'); 
-                els.emailErrorMsg.classList.add('hidden');
-            }
-            function showEmailError(msg) {
-                els.inputEmail.classList.add('g-input-error'); 
-                els.emailLabel.classList.add('g-label-error');
-                els.emailErrorText.innerText = msg; 
-                els.emailErrorMsg.classList.remove('hidden'); 
-                els.inputEmail.focus();
-            }
-            function resetPasswordError() {
-                els.inputPassword.classList.remove('g-input-error'); 
-                els.passwordLabel.classList.remove('g-label-error'); 
-                els.passwordErrorMsg.classList.add('hidden');
-            }
-            function showPasswordError(msg) {
-                els.inputPassword.classList.add('g-input-error'); 
-                els.passwordLabel.classList.add('g-label-error');
-                els.passwordErrorText.innerText = msg; 
-                els.passwordErrorMsg.classList.remove('hidden'); 
-                els.inputPassword.focus();
-            }
-            
-            function updateOnlineStatus() {
-                if (navigator.onLine) {
-                    if (offlineTimer) clearTimeout(offlineTimer);
-                    document.body.classList.remove('body-gray-mode'); 
-                    els.offlineOverlay.classList.add('hidden');
-                    els.networkCheckToast.classList.add('hidden');
-                    els.interactionBlocker.classList.add('hidden');
+            let i = 0;
+            function type() {
+                if (i < data.text.length) {
+                    els.text.innerText += data.text.charAt(i);
+                    i++;
+                    setTimeout(type, 30);
                 } else {
-                    document.body.classList.add('body-gray-mode'); 
-                    els.networkCheckToast.classList.remove('hidden');
-                    els.interactionBlocker.classList.remove('hidden'); 
-                    if (offlineTimer) clearTimeout(offlineTimer);
-                    offlineTimer = setTimeout(() => {
-                        els.networkCheckToast.classList.add('hidden');
-                        els.offlineOverlay.classList.remove('hidden');
-                    }, 3000);
+                    gameState.typing = false;
                 }
             }
-            window.addEventListener('online', updateOnlineStatus);
-            window.addEventListener('offline', updateOnlineStatus);
-            updateOnlineStatus(); 
+            type();
 
-            changeLanguage(currentLangGlobal);
-            const initLangItem = document.querySelector(`.g-lang-item[data-val="${currentLangGlobal}"]`);
-            if (initLangItem && els.currentLangText) {
-                els.currentLangText.innerText = initLangItem.innerText;
-            }
-        });
+            const p = Math.floor(((gameState.step + 1) / script.length) * 100);
+            els.progressBar.style.width = p + '%';
+            els.progressText.innerText = p + '%';
+        }
+
+        function nextStep() {
+            if (gameState.typing) return;
+            gameState.step++;
+            if (gameState.step < script.length) renderStep();
+        }
     </script>
 </body>
 </html>
-
