@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>N.S.B. 內部安全審查系統 - 實戰考核</title>
+    <title>N.S.B. 內部安全審查系統</title>
     <style>
-        /* --- 1. 視覺核心：嚴肅警務/政府內網風格 --- */
+        /* --- 1. 視覺核心 --- */
         :root {
-            --police-dark: #0a2342;       /* 深海軍藍 */
-            --police-blue: #0056b3;       /* 交互藍 */
-            --police-light: #e6f0ff;      /* 淺藍背景 */
+            --police-dark: #0a2342;
+            --police-blue: #0056b3;
             --text-main: #1a1a1a;
-            --white: #ffffff;
             --glass: rgba(255, 255, 255, 0.98);
             --shadow: 0 8px 30px rgba(10, 35, 66, 0.2);
             --border: #cadae8;
@@ -32,7 +30,7 @@
             position: relative;
         }
 
-        /* --- 2. 頂部狀態欄 (HUD) --- */
+        /* --- 2. 頂部狀態欄 --- */
         .top-hud {
             position: absolute;
             top: 0; left: 0; width: 100%;
@@ -94,25 +92,28 @@
 
         .character-img {
             position: absolute;
+            /* 核心定位：強制水平居中且底部對齊 */
             left: 50%;
             bottom: 0;
             transform: translateX(-50%);
             
-            max-height: 95vh;
+            /* 尺寸控制 */
+            height: 95vh;
             width: auto;
             max-width: 85vw;
+            object-fit: contain;
+            object-position: bottom center;
             
             filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5));
             animation: breathe 4s ease-in-out infinite; 
-            transition: opacity 0.5s, filter 0.5s; /* 增加過渡效果 */
+            transition: opacity 0.3s ease-in-out;
             
-            /* 【修改】初始狀態設為透明 */
-            opacity: 0; 
+            opacity: 0;
         }
 
         @keyframes breathe {
             0%, 100% { transform: translateX(-50%) scale(1); }
-            50% { transform: translateX(-50%) scale(1.02); }
+            50% { transform: translateX(-50%) scale(1.01); }
         }
 
         /* --- 4. 對話框 --- */
@@ -234,40 +235,30 @@
     </div>
 
     <div id="character-stage">
-        <img 
-            id="char-img"
-            src="https://i.ibb.co/Y4KqtW4B/5.png" 
-            alt="Character" 
-            class="character-img"
-        >
+        <img id="char-img" src="" alt="Character" class="character-img">
     </div>
 
     <div id="dialogue-layer" onclick="nextStep()">
         <div class="dialogue-box">
             <div class="name-tag" id="speaker-name">SYSTEM</div>
-            <div class="text-content" id="text-box">正在初始化安全協議...</div>
+            <div class="text-content" id="text-box">正在初始化...</div>
             <div class="next-indicator">點擊繼續 ▶</div>
         </div>
     </div>
 
     <div id="start-overlay" class="overlay">
         <h1 style="color: var(--police-dark); margin-bottom: 10px;">⚠️ 网站测试中请勿使用</h1>
-        <p style="color: #666;">請確保您的神經連接穩定</p>
         <button class="btn-start" onclick="initGame()">開始鏈接</button>
     </div>
 
     <script>
-        // --- 圖片 URL 配置 ---
+        // --- 資源配置 ---
         const IMG_NORMAL = "https://i.ibb.co/Y4KqtW4B/5.png";
-        const IMG_WARNING = "https://i.ibb.co/LdXDrqzM/6.png";
+        
+        // 【修改】已更新為您提供的新圖片
+        const IMG_RULES  = "https://i.ibb.co/nNq7SzRv/7.png"; 
 
-        // --- 圖片加載錯誤處理 ---
-        document.getElementById('char-img').onerror = function() {
-            // 靜默失敗或替換為佔位符
-            console.log("Image load failed");
-        };
-
-        // --- 遊戲數據 ---
+        // --- 遊戲狀態 ---
         const gameState = {
             step: 0,
             typing: false
@@ -282,67 +273,57 @@
             charImg: document.getElementById('char-img')
         };
 
-        // --- 劇本內容 【修改】名字改為茉莉 ---
+        // --- 劇本內容 ---
         const script = [
             {
-                // Index 0
                 speaker: 'SYSTEM',
-                text: '【系統提示】生物識別通過。正在建立加密通訊...'
+                text: '【系統提示】生物識別通過。正在建立加密通訊...',
+                image: null
             },
             {
-                // Index 1
-                speaker: '茉莉 (培訓官)',
-                text: '看起来你状态不错嘛!'
+                speaker: '茉莉(培訓官)',
+                text: '看起來你狀態不錯嘛！',
+                image: null
             },
             {
-                // Index 2 - 圖片開始出現
-                speaker: '茉莉 (培訓官)',
-                text: '早上好，新兵。我是 Eva，你的入職引導員。看來你比預定時間早到了兩分鐘，不錯的習慣。'
+                speaker: '茉莉(培訓官)',
+                text: '早上好，新兵。我是 茉莉，你的入職引導員。看來你比預定時間早到了兩分鐘，不錯的習慣。',
+                image: IMG_NORMAL
             },
             {
-                // Index 3
-                speaker: '茉莉 (培訓官)',
-                text: '既然你已經穿上了這身制服，就意味著你已經做好了將大腦接入腦机,把自己暴露在危险环境的準備。'
+                speaker: '茉莉(培訓官)',
+                text: '既然你已經穿上了這身制服，就意味著你已經做好了接入腦機的準備。',
+                image: IMG_NORMAL
             },
             {
-                // Index 4
-                speaker: '茉莉 (培訓官)',
-                text: '在把你移交給那些性格迥异的實戰考官之前，我需要確認你是否記住了【生存三法則】。在二十二世纪的互聯網，遺忘法則就意味著死亡'
+                speaker: '茉莉(培訓官)',
+                text: '我需要確認你是否記住了【生存三法則】。在二十二世紀的互聯網，遺忘法則就意味著死亡。',
+                image: IMG_RULES
             },
             {
-                // Index 5 - 圖片切換為警告狀態 (6.png)
-                speaker: '茉莉 (培訓官)',
-                text: '法則一：【零信任 (Zero Trust)】。不要相信任何未經驗證的數據，哪怕發件人顯示是你的親生母親。'
+                speaker: '茉莉(培訓官)',
+                text: '法則一：【零信任】。不要相信任何未經驗證的數據。',
+                image: IMG_RULES
             },
             {
-                // Index 6
-                speaker: '茉莉 (培訓官)',
-                text: '法則二：【神經防火牆】。永遠保持你的防火墙和防毒软件處於开启狀態。黑客最喜歡攻擊那些為了“下載速度”而關閉防火牆的愣头青。'
+                speaker: '茉莉(培訓官)',
+                text: '法則二：【神經防火牆】。永遠保持你的防火牆處於開啟狀態。',
+                image: IMG_RULES
             },
             {
-                // Index 7
-                speaker: '茉莉 (培訓官)',
-                text: '希望你没做过'
+                speaker: '茉莉(培訓官)',
+                text: '法則三：【物理隔絕】。路邊撿到的不明存儲芯片絕對不要插入終端。',
+                image: IMG_RULES
             },
             {
-                // Index 8
-                speaker: '茉莉 (培訓官)',
-                text: '法則三：【物理隔絕】。路邊撿到的不明存儲芯片絕對不要插入終端。這聽起來很蠢，但每年我們都要處理幾百個因此腦机中毒的特工。'
+                speaker: '茉莉(培訓官)',
+                text: '很好，你的心率數據很穩定。具備成為高級安全官的潛質。',
+                image: IMG_NORMAL
             },
             {
-                // Index 9
-                speaker: '茉莉 (培訓官)',
-                text: '很好，你的心率數據很穩定。看來你具備成為高級安全官的潛質。'
-            },
-            {
-                // Index 10
-                speaker: '茉莉 (培訓官)',
-                text: '我的引導任務結束了。現在，準備好迎接真正的挑戰了嗎？'
-            },
-            {
-                // Index 11 - 鏈接中斷，圖片消失
                 speaker: 'SYSTEM',
-                text: '【鏈接中斷】Eva 已下線。\n正在轉接至實戰靶場...\n(DEMO 結束)'
+                text: '【鏈接中斷】茉莉 已下線。',
+                image: null
             }
         ];
 
@@ -360,45 +341,28 @@
             els.progressText.innerText = percentage + '%';
         }
 
-        function updateCharacterImage(stepIndex) {
-            // 【修改】核心圖片控制邏輯
-            
-            // 1. 如果是 "早上好" (Index 2)，顯示正常圖片
-            if (stepIndex === 2) {
-                els.charImg.src = IMG_NORMAL;
-                els.charImg.style.opacity = '1';
-            }
-            // 2. 如果是 "法則一" (Index 5)，切換為警告圖片
-            else if (stepIndex === 5) {
-                els.charImg.src = IMG_WARNING;
-            }
-            // 3. 如果是 "鏈接中斷" (Index 11)，隱藏圖片
-            else if (stepIndex === 11) {
-                els.charImg.style.opacity = '0';
-            }
-            // 4. 對於 Index 0 和 1 (在 "早上好" 之前)，確保隱藏
-            else if (stepIndex < 2) {
-                els.charImg.style.opacity = '0';
-            }
-        }
-
         function renderStep() {
             const currentScript = script[gameState.step];
             
-            // 更新圖片狀態
-            updateCharacterImage(gameState.step);
+            // 1. 圖片處理邏輯
+            if (currentScript.image) {
+                els.charImg.src = currentScript.image;
+                els.charImg.style.opacity = '1';
+            } else {
+                els.charImg.style.opacity = '0';
+            }
 
-            // 設置名字
+            // 2. 名字顯示
             els.speaker.innerText = currentScript.speaker;
             
-            // 名字樣式區分
-            if (currentScript.speaker.includes('SYSTEM')) {
+            // 系統消息變色
+            if (currentScript.speaker === 'SYSTEM') {
                 els.speaker.style.background = '#555';
             } else {
                 els.speaker.style.background = 'var(--police-dark)';
             }
 
-            // 打字機效果
+            // 3. 打字機效果
             els.text.innerHTML = '';
             gameState.typing = true;
 
@@ -413,7 +377,7 @@
                         els.text.innerHTML += content.charAt(i);
                     }
                     i++;
-                    setTimeout(typeWriter, 25);
+                    setTimeout(typeWriter, 30);
                 } else {
                     gameState.typing = false;
                 }
@@ -424,14 +388,13 @@
 
         function nextStep() {
             if (gameState.typing) {
-                // 如果正在打字，暫不處理
                 return;
             }
             gameState.step++;
             if (gameState.step < script.length) {
                 renderStep();
             } else {
-                alert("演示結束：準備進入下一關");
+                alert("培訓結束。");
                 location.reload();
             }
         }
