@@ -92,22 +92,17 @@
 
         .character-img {
             position: absolute;
-            /* 核心定位：強制水平居中且底部對齊 */
             left: 50%;
             bottom: 0;
             transform: translateX(-50%);
-            
-            /* 尺寸控制 */
             height: 95vh;
             width: auto;
             max-width: 85vw;
             object-fit: contain;
             object-position: bottom center;
-            
             filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5));
             animation: breathe 4s ease-in-out infinite; 
             transition: opacity 0.3s ease-in-out;
-            
             opacity: 0;
         }
 
@@ -254,8 +249,6 @@
     <script>
         // --- 資源配置 ---
         const IMG_NORMAL = "https://i.ibb.co/Y4KqtW4B/5.png";
-        
-        // 【修改】已更新為您提供的新圖片
         const IMG_RULES  = "https://i.ibb.co/nNq7SzRv/7.png"; 
 
         // --- 遊戲狀態 ---
@@ -273,54 +266,76 @@
             charImg: document.getElementById('char-img')
         };
 
-        // --- 劇本內容 ---
+        // --- 劇本內容 (已更新) ---
         const script = [
             {
+                // Index 0
                 speaker: 'SYSTEM',
                 text: '【系統提示】生物識別通過。正在建立加密通訊...',
                 image: null
             },
             {
+                // Index 1
                 speaker: '茉莉(培訓官)',
-                text: '看起來你狀態不錯嘛！',
+                text: '看起来你状态不错嘛!',
                 image: null
             },
             {
+                // Index 2 - 圖片開始出現 (Normal)
                 speaker: '茉莉(培訓官)',
-                text: '早上好，新兵。我是 茉莉，你的入職引導員。看來你比預定時間早到了兩分鐘，不錯的習慣。',
+                text: '早上好，新兵。我是 Eva，你的入職引導員。看來你比預定時間早到了兩分鐘，不錯的習慣。',
                 image: IMG_NORMAL
             },
             {
+                // Index 3
                 speaker: '茉莉(培訓官)',
-                text: '既然你已經穿上了這身制服，就意味著你已經做好了接入腦機的準備。',
+                text: '既然你已經穿上了這身制服，就意味著你已經做好了將大腦接入腦机，把自己暴露在危险环境的準備。',
                 image: IMG_NORMAL
             },
             {
+                // Index 4
                 speaker: '茉莉(培訓官)',
-                text: '我需要確認你是否記住了【生存三法則】。在二十二世紀的互聯網，遺忘法則就意味著死亡。',
-                image: IMG_RULES
-            },
-            {
-                speaker: '茉莉(培訓官)',
-                text: '法則一：【零信任】。不要相信任何未經驗證的數據。',
-                image: IMG_RULES
-            },
-            {
-                speaker: '茉莉(培訓官)',
-                text: '法則二：【神經防火牆】。永遠保持你的防火牆處於開啟狀態。',
-                image: IMG_RULES
-            },
-            {
-                speaker: '茉莉(培訓官)',
-                text: '法則三：【物理隔絕】。路邊撿到的不明存儲芯片絕對不要插入終端。',
-                image: IMG_RULES
-            },
-            {
-                speaker: '茉莉(培訓官)',
-                text: '很好，你的心率數據很穩定。具備成為高級安全官的潛質。',
+                text: '在把你移交給那些性格迥异的實戰考官之前，我需要確認你是否記住了【生存三法則】。在二十二世纪的互聯網，遺忘法則就意味著死亡。',
                 image: IMG_NORMAL
             },
             {
+                // Index 5 - 切換為警告 (Rules)
+                speaker: '茉莉(培訓官)',
+                text: '法則一：【零信任 (Zero Trust)】。不要相信任何未經驗證的數據，哪怕發件人顯示是你的親生母親。',
+                image: IMG_RULES
+            },
+            {
+                // Index 6
+                speaker: '茉莉(培訓官)',
+                text: '法則二：【神經防火牆】。永遠保持你的防火墙和防毒软件處於开启狀態。黑客最喜歡攻擊那些為了“下載速度”而關閉防火牆的愣头青。',
+                image: IMG_RULES
+            },
+            {
+                // Index 7
+                speaker: '茉莉(培訓官)',
+                text: '希望你没做过。',
+                image: IMG_RULES
+            },
+            {
+                // Index 8
+                speaker: '茉莉(培訓官)',
+                text: '法則三：【物理隔絕】。路邊撿到的不明存儲芯片絕對不要插入終端。這聽起來很蠢，但每年我們都要處理幾百個因此腦机中毒的特工。',
+                image: IMG_RULES
+            },
+            {
+                // Index 9 - 切回正常 (Normal)
+                speaker: '茉莉(培訓官)',
+                text: '很好，你的心率數據很穩定。看來你具備成為高級安全官的潛質。',
+                image: IMG_NORMAL
+            },
+            {
+                // Index 10
+                speaker: '茉莉(培訓官)',
+                text: '我的引導任務結束了。現在，準備好迎接真正的挑戰了嗎？',
+                image: IMG_NORMAL
+            },
+            {
+                // Index 11
                 speaker: 'SYSTEM',
                 text: '【鏈接中斷】茉莉 已下線。',
                 image: null
