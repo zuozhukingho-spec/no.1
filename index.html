@@ -5,129 +5,274 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>N.S.B. 內部安全審查系統 - 實戰考核</title>
     <style>
-        /* --- 視覺核心 --- */
+        /* --- 1. 視覺核心：嚴肅警務/政府內網風格 --- */
         :root {
-            --police-dark: #0a2342;       
-            --police-blue: #0056b3;       
+            --police-dark: #0a2342;       /* 深海軍藍 */
+            --police-blue: #0056b3;       /* 交互藍 */
+            --police-light: #e6f0ff;      /* 淺藍背景 */
             --text-main: #1a1a1a;
-            --glass: rgba(255, 255, 255, 0.98); 
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.98);
             --shadow: 0 8px 30px rgba(10, 35, 66, 0.2);
             --border: #cadae8;
-            --warning-red: #d32f2f;
         }
 
         body {
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             background-color: #f4f7fa;
             background-image: 
                 linear-gradient(rgba(10, 35, 66, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(10, 35, 66, 0.05) 1px, transparent 1px);
             background-size: 50px 50px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            height: 100vh; overflow: hidden; user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
             position: relative;
         }
 
-        /* --- 頂部狀態欄 --- */
+        /* --- 2. 頂部狀態欄 (HUD) --- */
         .top-hud {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 60px;
+            top: 0; left: 0; width: 100%;
+            height: 60px;
             background: var(--police-dark);
-            color: white; display: flex; align-items: center; justify-content: space-between;
-            padding: 0 30px; box-sizing: border-box; z-index: 100;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 100;
         }
         
-        .progress-track { width: 200px; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; width: 0%; background: #00d2ff; transition: width 0.5s ease; }
+        .logo-area {
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        /* --- 人物立繪層 (修正位置) --- */
+        .progress-module {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+        .progress-track {
+            width: 200px;
+            height: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #00d2ff;
+            transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 0 10px #00d2ff;
+        }
+
+        /* --- 3. 人物立繪層 --- */
         #character-stage {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             z-index: 10;
             pointer-events: none;
+            overflow: hidden;
         }
+
         .character-img {
             position: absolute;
             left: 50%;
             bottom: 0;
-            transform: translateX(-50%); /* 關鍵修正：確保水平絕對居中 */
-            max-height: 90vh;
+            transform: translateX(-50%);
+            
+            max-height: 95vh;
             width: auto;
-            transition: opacity 0.5s ease;
-            opacity: 0;
+            max-width: 85vw;
+            
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5));
+            animation: breathe 4s ease-in-out infinite; 
+            transition: opacity 0.5s, filter 0.5s; /* 增加過渡效果 */
+            
+            /* 【修改】初始狀態設為透明 */
+            opacity: 0; 
         }
 
-        /* --- 對話框 --- */
+        @keyframes breathe {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.02); }
+        }
+
+        /* --- 4. 對話框 --- */
         #dialogue-layer {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 1100px; height: 220px; z-index: 50; cursor: pointer;
-        }
-        .dialogue-box {
-            width: 100%; height: 100%; background: var(--glass); border-radius: 8px;
-            padding: 50px 40px; box-sizing: border-box; box-shadow: var(--shadow);
-            border-top: 4px solid var(--police-dark); position: relative;
-        }
-        .name-tag {
-            position: absolute; top: -20px; left: 40px; background: var(--police-dark);
-            color: white; padding: 8px 30px; font-weight: bold; border-radius: 4px;
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1100px;
+            height: 240px;
+            z-index: 50;
+            pointer-events: auto;
+            cursor: pointer;
         }
 
-        /* --- 啟動第一頁 --- */
+        .dialogue-box {
+            width: 100%;
+            height: 100%;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-top: 4px solid var(--police-dark);
+            border-radius: 8px;
+            padding: 50px 40px 30px 40px;
+            box-sizing: border-box;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .name-tag {
+            position: absolute;
+            top: -22px;
+            left: 40px;
+            background: var(--police-dark);
+            color: white;
+            padding: 8px 35px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .name-tag::before {
+            content: '';
+            display: block;
+            width: 8px; height: 8px;
+            background: #00d2ff;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #00d2ff;
+        }
+
+        .text-content {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .next-indicator {
+            align-self: flex-end;
+            color: var(--police-blue);
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            animation: bounce 1s infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes bounce { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+
+        /* --- 遮罩層 --- */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #ffffff; z-index: 1000;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-            text-align: center;
+            background: white;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s;
         }
-        .warning-text {
-            color: var(--warning-red); font-weight: bold; font-size: 1.4rem;
-            margin-bottom: 20px; padding: 10px 20px; border: 2px solid var(--warning-red);
-            display: inline-block; animation: blink 1.5s infinite;
-        }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
         .btn-start {
-            padding: 15px 50px; background: var(--police-dark); color: white;
-            border: none; border-radius: 4px; cursor: pointer; font-size: 1.2rem; font-weight: bold;
+            margin-top: 30px;
+            padding: 15px 40px;
+            background: var(--police-dark);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
         }
+        .btn-start:hover { background: var(--police-blue); }
+
     </style>
 </head>
 <body>
 
     <div class="top-hud">
-        <div style="font-weight: bold;">🛡️ N.S.B. 網絡安全局</div>
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
-            <span id="progress-text">0%</span>
+        <div class="logo-area">
+            <span>🛡️</span> 
+            <span>N.S.B. 網絡安全局 | 實戰考核系統</span>
+        </div>
+        <div class="progress-module">
+            <span style="font-size: 0.85rem; opacity: 0.8;">培訓進度</span>
+            <div class="progress-track">
+                <div id="progress-bar" class="progress-fill"></div>
+            </div>
+            <span id="progress-text" style="font-weight:bold;">0%</span>
         </div>
     </div>
 
     <div id="character-stage">
-        <img id="char-img" src="" class="character-img">
+        <img 
+            id="char-img"
+            src="https://i.ibb.co/Y4KqtW4B/5.png" 
+            alt="Character" 
+            class="character-img"
+        >
     </div>
 
     <div id="dialogue-layer" onclick="nextStep()">
         <div class="dialogue-box">
             <div class="name-tag" id="speaker-name">SYSTEM</div>
-            <div id="text-box" style="font-size: 1.25rem; line-height: 1.6;">正在初始化...</div>
+            <div class="text-content" id="text-box">正在初始化安全協議...</div>
+            <div class="next-indicator">點擊繼續 ▶</div>
         </div>
     </div>
 
     <div id="start-overlay" class="overlay">
-        <div class="warning-text">⚠️ 網站測試中，請勿使用</div>
-        <h1 style="color: var(--police-dark); margin-top: 0;">N.S.B. 內部系統考核</h1>
-        <button class="btn-start" onclick="initGame()">進入系統</button>
+        <h1 style="color: var(--police-dark); margin-bottom: 10px;">⚠️ 网站测试中请勿使用</h1>
+        <p style="color: #666;">請確保您的神經連接穩定</p>
+        <button class="btn-start" onclick="initGame()">開始鏈接</button>
     </div>
 
     <script>
+        // --- 圖片 URL 配置 ---
         const IMG_NORMAL = "https://i.ibb.co/Y4KqtW4B/5.png";
-        const IMG_RULES = "https://i.ibb.co/1tSp2Brm/image.png";
+        const IMG_WARNING = "https://i.ibb.co/LdXDrqzM/6.png";
 
-        const gameState = { step: 0, typing: false };
+        // --- 圖片加載錯誤處理 ---
+        document.getElementById('char-img').onerror = function() {
+            // 靜默失敗或替換為佔位符
+            console.log("Image load failed");
+        };
+
+        // --- 遊戲數據 ---
+        const gameState = {
+            step: 0,
+            typing: false
+        };
+
         const els = {
             speaker: document.getElementById('speaker-name'),
             text: document.getElementById('text-box'),
@@ -137,99 +282,158 @@
             charImg: document.getElementById('char-img')
         };
 
+        // --- 劇本內容 【修改】名字改為茉莉 ---
         const script = [
             {
+                // Index 0
                 speaker: 'SYSTEM',
-                text: '【系統提示】生物識別通過。正在建立加密通訊...',
-                image: null
+                text: '【系統提示】生物識別通過。正在建立加密通訊...'
             },
             {
-                speaker: '茉莉(培訓官)',
-                text: '看起來你狀態不錯嘛！',
-                image: null
+                // Index 1
+                speaker: '茉莉 (培訓官)',
+                text: '看起来你状态不错嘛!'
             },
             {
-                speaker: '茉莉(培訓官)',
-                text: '早上好，新兵。我是 茉莉，你的入職引導員。看來你比預定時間早到了兩分鐘。',
-                image: IMG_NORMAL
+                // Index 2 - 圖片開始出現
+                speaker: '茉莉 (培訓官)',
+                text: '早上好，新兵。我是 Eva，你的入職引導員。看來你比預定時間早到了兩分鐘，不錯的習慣。'
             },
             {
-                speaker: '茉莉(培訓官)',
-                text: '既然你已經穿上了這身制服，就意味著你已經做好了接入腦機的準備。',
-                image: IMG_NORMAL
+                // Index 3
+                speaker: '茉莉 (培訓官)',
+                text: '既然你已經穿上了這身制服，就意味著你已經做好了將大腦接入腦机,把自己暴露在危险环境的準備。'
             },
             {
-                speaker: '茉莉(培訓官)',
-                text: '我需要確認你是否記住了【生存三法則】。',
-                image: IMG_RULES
+                // Index 4
+                speaker: '茉莉 (培訓官)',
+                text: '在把你移交給那些性格迥异的實戰考官之前，我需要確認你是否記住了【生存三法則】。在二十二世纪的互聯網，遺忘法則就意味著死亡'
             },
             {
-                speaker: '茉莉(培訓官)',
-                text: '法則一：【零信任】。',
-                image: IMG_RULES
+                // Index 5 - 圖片切換為警告狀態 (6.png)
+                speaker: '茉莉 (培訓官)',
+                text: '法則一：【零信任 (Zero Trust)】。不要相信任何未經驗證的數據，哪怕發件人顯示是你的親生母親。'
             },
             {
-                speaker: '茉莉(培訓官)',
-                text: '法則二：【神經防火牆】。',
-                image: IMG_RULES
+                // Index 6
+                speaker: '茉莉 (培訓官)',
+                text: '法則二：【神經防火牆】。永遠保持你的防火墙和防毒软件處於开启狀態。黑客最喜歡攻擊那些為了“下載速度”而關閉防火牆的愣头青。'
             },
             {
-                speaker: '茉莉(培訓官)',
-                text: '法則三：【物理隔絕】。',
-                image: IMG_RULES
+                // Index 7
+                speaker: '茉莉 (培訓官)',
+                text: '希望你没做过'
             },
             {
-                speaker: '茉莉(培訓官)',
-                text: '很好，你的心率數據很穩定。具備成為高級安全官的潛質。',
-                image: IMG_NORMAL
+                // Index 8
+                speaker: '茉莉 (培訓官)',
+                text: '法則三：【物理隔絕】。路邊撿到的不明存儲芯片絕對不要插入終端。這聽起來很蠢，但每年我們都要處理幾百個因此腦机中毒的特工。'
             },
             {
+                // Index 9
+                speaker: '茉莉 (培訓官)',
+                text: '很好，你的心率數據很穩定。看來你具備成為高級安全官的潛質。'
+            },
+            {
+                // Index 10
+                speaker: '茉莉 (培訓官)',
+                text: '我的引導任務結束了。現在，準備好迎接真正的挑戰了嗎？'
+            },
+            {
+                // Index 11 - 鏈接中斷，圖片消失
                 speaker: 'SYSTEM',
-                text: '【鏈接中斷】茉莉 已下線。',
-                image: null
+                text: '【鏈接中斷】Eva 已下線。\n正在轉接至實戰靶場...\n(DEMO 結束)'
             }
         ];
 
+        // --- 核心邏輯 ---
+
         function initGame() {
-            els.startOverlay.style.display = 'none';
+            els.startOverlay.style.opacity = '0';
+            setTimeout(() => { els.startOverlay.style.display = 'none'; }, 500);
             renderStep();
         }
 
-        function renderStep() {
-            const data = script[gameState.step];
+        function updateProgress() {
+            const percentage = Math.floor(((gameState.step + 1) / script.length) * 100);
+            els.progressBar.style.width = percentage + '%';
+            els.progressText.innerText = percentage + '%';
+        }
+
+        function updateCharacterImage(stepIndex) {
+            // 【修改】核心圖片控制邏輯
             
-            if (data.image) {
-                els.charImg.src = data.image;
+            // 1. 如果是 "早上好" (Index 2)，顯示正常圖片
+            if (stepIndex === 2) {
+                els.charImg.src = IMG_NORMAL;
                 els.charImg.style.opacity = '1';
-            } else {
+            }
+            // 2. 如果是 "法則一" (Index 5)，切換為警告圖片
+            else if (stepIndex === 5) {
+                els.charImg.src = IMG_WARNING;
+            }
+            // 3. 如果是 "鏈接中斷" (Index 11)，隱藏圖片
+            else if (stepIndex === 11) {
                 els.charImg.style.opacity = '0';
             }
+            // 4. 對於 Index 0 和 1 (在 "早上好" 之前)，確保隱藏
+            else if (stepIndex < 2) {
+                els.charImg.style.opacity = '0';
+            }
+        }
 
-            els.speaker.innerText = data.speaker;
-            els.text.innerText = '';
-            gameState.typing = true;
+        function renderStep() {
+            const currentScript = script[gameState.step];
             
+            // 更新圖片狀態
+            updateCharacterImage(gameState.step);
+
+            // 設置名字
+            els.speaker.innerText = currentScript.speaker;
+            
+            // 名字樣式區分
+            if (currentScript.speaker.includes('SYSTEM')) {
+                els.speaker.style.background = '#555';
+            } else {
+                els.speaker.style.background = 'var(--police-dark)';
+            }
+
+            // 打字機效果
+            els.text.innerHTML = '';
+            gameState.typing = true;
+
             let i = 0;
-            function type() {
-                if (i < data.text.length) {
-                    els.text.innerText += data.text.charAt(i);
+            const content = currentScript.text;
+            
+            function typeWriter() {
+                if (i < content.length) {
+                    if(content.charAt(i) === '\n') {
+                        els.text.innerHTML += '<br>';
+                    } else {
+                        els.text.innerHTML += content.charAt(i);
+                    }
                     i++;
-                    setTimeout(type, 30);
+                    setTimeout(typeWriter, 25);
                 } else {
                     gameState.typing = false;
                 }
             }
-            type();
-
-            const p = Math.floor(((gameState.step + 1) / script.length) * 100);
-            els.progressBar.style.width = p + '%';
-            els.progressText.innerText = p + '%';
+            typeWriter();
+            updateProgress();
         }
 
         function nextStep() {
-            if (gameState.typing) return;
+            if (gameState.typing) {
+                // 如果正在打字，暫不處理
+                return;
+            }
             gameState.step++;
-            if (gameState.step < script.length) renderStep();
+            if (gameState.step < script.length) {
+                renderStep();
+            } else {
+                alert("演示結束：準備進入下一關");
+                location.reload();
+            }
         }
     </script>
 </body>
