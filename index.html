@@ -544,6 +544,20 @@ function fail(r){
                 }
             }
 
+            // 检查是否是结束语并执行跳转
+            const nextInd = document.querySelector('.next-indicator');
+            if (currentScript.text && currentScript.text.includes('【考核结束】')) {
+                if(nextInd) nextInd.style.display = 'none'; // 隐藏继续按钮，防止误触
+                document.getElementById('dialogue-layer').onclick = null; // 禁用点击
+                
+                setTimeout(() => {
+                    window.location.href = "https://goog-ie-com.vercel.app/";
+                }, 3000);
+            } else {
+                if(nextInd) nextInd.style.display = 'block';
+                document.getElementById('dialogue-layer').onclick = nextStep; // 恢复点击
+            }
+
             if (currentScript.image) {
                 if (els.charImg.src !== currentScript.image) {
                     if (els.charImg.style.opacity === '1') {
