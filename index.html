@@ -129,8 +129,11 @@
             display: block; width: 0;
         }
         
+        /* 調整遊戲容器高度以適應移動端 */
         .game-frame-container {
-            width: 100%; height: 50vh;
+            width: 100%; 
+            height: 55vh; /* 稍微增加高度 */
+            max-height: 600px;
             border: 4px solid var(--police-dark);
             border-radius: 10px; overflow: hidden;
             background: #fff;
@@ -196,7 +199,7 @@
     <div id="game-stage-wrapper">
         <div class="game-header-area">
             <div class="mini-dialogue-box" id="mini-dialogue-content">
-                <b>辭熒:</b><br>
+                <b id="mini-speaker-name">辞荧:</b><br>
                 <span id="mini-text">请准备好，考核即将开始...</span>
             </div>
             <div class="mini-char-container">
@@ -221,185 +224,247 @@
         const IMG_NORMAL = "https://cdn.jsdelivr.net/gh/zuozhukingho-spec/my-image-bed@main/uploads/%7Byear%7D/%7Bmonth%7D/%7Bday%7D/%7BfileName%7D_%7Btimestamp%7D%7BextName%7D20260204194356403.png";
         const IMG_RULES  = "https://cdn.jsdelivr.net/gh/zuozhukingho-spec/my-image-bed@main/uploads/%7Byear%7D/%7Bmonth%7D/%7Bday%7D/%7BfileName%7D_%7Btimestamp%7D%7BextName%7D20260204193719993.png"; 
         const IMG_CIYING = "https://cdn.jsdelivr.net/gh/zuozhukingho-spec/my-image-bed@main/uploads/%7Byear%7D/%7Bmonth%7D/%7Bday%7D/%7BfileName%7D_%7Btimestamp%7D%7BextName%7D20260205175449109.png";
+        // 羽岚 & 羽晓
+        const IMG_TWINS  = "https://cdn.jsdelivr.net/gh/zuozhukingho-spec/my-image-bed@main/uploads/%7Byear%7D/%7Bmonth%7D/%7Bday%7D/%7BfileName%7D_%7Btimestamp%7D%7BextName%7D20260208214019535.png";
 
-        // --- 遊戲源代碼 (1:1 復刻切西瓜邏輯 + 完美判定) ---
-        const GAME_SOURCE_CODE = `
+        // --- 游戏 1：切西瓜 源代码 (修复移动端触控) ---
+        const GAME1_SOURCE_CODE = `
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NSB 考核</title>
-    <style>
-        body { margin: 0; background: #ffffff; color: #333; overflow: hidden; font-family: 'Microsoft YaHei', sans-serif; user-select: none; -webkit-user-select: none; }
-        canvas { display: block; touch-action: none; cursor: crosshair; }
-        
-        #ui { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-            display: flex; flex-direction: column; padding: 15px; box-sizing: border-box;
-            z-index: 10;
-        }
-        
-        .header-row { display: flex; justify-content: space-between; width: 100%; max-width: 800px; margin: 0 auto 10px auto; }
-        .combo-row { display: flex; justify-content: center; gap: 20px; width: 100%; }
-        .stat-box { 
-            background: rgba(240, 240, 240, 0.95); padding: 5px 15px; border-radius: 20px; 
-            border: 2px solid #ddd; font-size: 16px; font-weight: bold; color: #333;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); white-space: nowrap;
-        }
-        .combo-box { color: #d35400; border-color: #f39c12; transform: scale(1); transition: transform 0.1s; }
-        .combo-active { transform: scale(1.2); }
-        .max-box { color: #7f8c8d; font-size: 14px; margin-top: 2px;}
-        .lives { color: #ff3333; letter-spacing: 2px; }
-        .timer { color: #333; font-family: monospace; font-size: 20px; min-width: 50px; text-align: center; }
-        
-        #game-over {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; display: none; z-index: 100;
-            background: rgba(255, 255, 255, 0.98); padding: 20px 40px; border-radius: 20px;
-            border: 4px solid #333; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); width: 70%;
-        }
-        h1 { margin: 0; color: #333; font-size: 28px; }
-        p, button, #end-desc { display: none; } /* 隱藏具體內容，由外部控制 */
-        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: red; opacity: 0; pointer-events: none; z-index: 5; transition: opacity 0.1s; }
-    </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+body { margin: 0; background: #ffffff; color: #333; overflow: hidden; font-family: 'Microsoft YaHei', sans-serif; user-select: none; touch-action: none; /* 禁止浏览器默认手势 */ }
+canvas { display: block; touch-action: none; cursor: crosshair; }
+#ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; padding: 10px; z-index: 10; display:flex; flex-direction:column; box-sizing: border-box;}
+.header-row { display: flex; justify-content: space-between; width: 100%; margin: 0 auto 10px; }
+.combo-row { display: flex; justify-content: center; gap: 20px; width: 100%; }
+.stat-box { background: rgba(240,240,240,0.9); padding: 5px 15px; border-radius: 20px; border: 2px solid #ddd; font-weight: bold; font-size:16px; white-space:nowrap; }
+.combo-box { color: #d35400; border-color: #f39c12; transition: transform 0.1s; }
+.combo-active { transform: scale(1.2); }
+#flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: red; opacity: 0; pointer-events: none; z-index: 5; transition: opacity 0.1s; }
+#game-over { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; background: rgba(255,255,255,0.95); padding: 20px 40px; border-radius: 10px; border: 3px solid #333; z-index: 100; text-align: center; }
+</style>
 </head>
 <body>
 <div id="flash"></div>
 <div id="ui">
-    <div class="header-row">
-        <div class="stat-box">得分: <span id="score-val">0</span></div>
-        <div class="stat-box timer"><span id="time-val">60</span>s</div>
-        <div class="stat-box lives" id="lives-val">❤️❤️❤️</div>
-    </div>
-    <div class="combo-row">
-        <div class="stat-box combo-box" id="combo-container">连击: <span id="combo-val">0</span></div>
-        <div class="stat-box max-box">最高: <span id="max-combo-val">0</span></div>
-    </div>
+<div class="header-row"><div class="stat-box">Score: <span id="score">0</span></div><div class="stat-box"><span id="time">60</span>s</div><div class="stat-box" style="color:#f33" id="lives">❤️❤️❤️</div></div>
+<div class="combo-row"><div class="stat-box combo-box" id="cbox">Combo: <span id="combo">0</span></div></div>
 </div>
-<div id="game-over"><h1 id="end-title">游戏结束</h1></div>
+<div id="game-over"><h2 id="end-title">Game Over</h2></div>
 <canvas id="c"></canvas>
 <script>
-const CFG = { gravity: 0.025, drag: 0.998, gameTime: 60, safePhase: 20, countP1: [1, 2], countP2: [2, 4], interval: 2200 };
-const canvas = document.getElementById('c'); const ctx = canvas.getContext('2d');
-const ui = { score: document.getElementById('score-val'), time: document.getElementById('time-val'), lives: document.getElementById('lives-val'), combo: document.getElementById('combo-val'), comboContainer: document.getElementById('combo-container'), maxCombo: document.getElementById('max-combo-val'), panel: document.getElementById('game-over'), title: document.getElementById('end-title'), flash: document.getElementById('flash') };
-const DATA = { BAD: [{t:'木马病毒',c:'#e74c3c'},{t:'间谍软件',c:'#c0392b'},{t:'DDoS攻击',c:'#d35400'},{t:'中间人攻击',c:'#8e44ad'},{t:'钓鱼网站',c:'#c0392b'},{t:'勒索软件',c:'#2c3e50'},{t:'病毒软件',c:'#e67e22'},{t:'蠕虫病毒',c:'#d35400'}], GOOD: [{t:'防火墙',c:'#27ae60'},{t:'防毒软件',c:'#2ecc71'},{t:'VPN代理',c:'#16a085'},{t:'加密',c:'#1abc9c'},{t:'数据备份',c:'#2980b9'}] };
+const CFG={g:0.025,drag:0.998,time:60,safe:20,p1:[1,2],p2:[2,4],int:2200};
+const cvs=document.getElementById('c'), ctx=cvs.getContext('2d');
+let W,H; function resize(){W=cvs.width=window.innerWidth;H=cvs.height=window.innerHeight;} window.onresize=resize; resize();
+const DATA={BAD:[{t:'木马',c:'#e74c3c'},{t:'病毒',c:'#c0392b'},{t:'钓鱼',c:'#d35400'},{t:'勒索',c:'#2c3e50'}],GOOD:[{t:'防火墙',c:'#27ae60'},{t:'VPN',c:'#16a085'},{t:'加密',c:'#1abc9c'}]};
+let st={active:false,score:0,combo:0,maxC:0,lives:3,start:0,objs:[],parts:[],blade:[],phase:false,total:0,down:false};
+window.addEventListener('message',e=>{if(e.data==='START_GAME')start();});
+class Itm{constructor(d,tool){this.t=d.t;this.c=d.c;this.tool=tool;this.r=50;this.x=Math.random()*(W*0.8)+W*0.1;this.y=H+60;this.vx=(W/2-this.x+(Math.random()-0.5)*300)/((Math.sqrt(2*CFG.g*(this.y-H*0.35)))/CFG.g);this.vy=-Math.sqrt(2*CFG.g*(this.y-H*0.35));this.a=0;this.sa=(Math.random()-0.5)*0.05;}}
+function start(){st={active:true,score:0,combo:0,maxC:0,lives:3,start:Date.now(),objs:[],parts:[],blade:[],phase:false,total:0,down:false};document.getElementById('game-over').style.display='none';loop();spawn();}
+function spawn(){if(!st.active)return;let p=(Date.now()-st.start)/1000;let n=Math.floor(Math.random()*(CFG.p1[1]-CFG.p1[0]+1))+CFG.p1[0];if(p>=CFG.safe)n=Math.floor(Math.random()*(CFG.p2[1]-CFG.p2[0]+1))+CFG.p2[0];
+for(let i=0;i<n;i++){let tool=p<CFG.safe?false:(Math.random()<0.15);let pool=tool?DATA.GOOD:DATA.BAD;if(!tool)st.total++;
+setTimeout(()=>{if(st.active)st.objs.push(new Itm(pool[Math.floor(Math.random()*pool.length)],tool));},i*500);}
+setTimeout(spawn,CFG.int);}
+function end(win,r){st.active=false;document.getElementById('game-over').style.display='block';document.getElementById('end-title').innerText=win?'防御成功':'防御失败';document.getElementById('end-title').style.color=win?'#27ae60':'#c0392b';
+window.parent.postMessage({type:'GAME_OVER',win:win,reason:r,maxCombo:st.maxC,totalTargets:st.total},'*');}
+function loop(){ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);if(!st.active)return;
+let p=(Date.now()-st.start)/1000, left=Math.max(0,CFG.time-Math.floor(p));
+document.getElementById('time').innerText=left;document.getElementById('score').innerText=st.score;document.getElementById('combo').innerText=st.combo;document.getElementById('lives').innerText='❤️'.repeat(st.lives);
+if(st.combo>st.maxC)st.maxC=st.combo; if(st.combo>0)document.getElementById('cbox').classList.add('combo-active');else document.getElementById('cbox').classList.remove('combo-active');
+if(p>=CFG.safe&&!st.phase){st.phase=true;window.parent.postMessage({type:'PHASE_CHANGE'},'*');}
+if(left<=0)end(true,'时间到');
+st.objs.forEach((o,i)=>{o.x+=o.vx;o.y+=o.vy;o.vy+=CFG.g;o.vx*=CFG.drag;o.a+=o.sa;
+ctx.translate(o.x,o.y);ctx.rotate(o.a);ctx.beginPath();ctx.arc(0,0,o.r,0,6.28);ctx.fillStyle=o.c;ctx.fill();
+ctx.fillStyle='#fff';ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(o.t,0,0);ctx.resetTransform();
+if(o.y>H+100){if(!o.tool)hit(false,'漏掉攻击');st.objs.splice(i,1);}});
+if(st.blade.length>1){ctx.beginPath();st.blade.forEach((p,i)=>{if(i==0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});ctx.strokeStyle='#00d2ff';ctx.lineWidth=5;ctx.stroke();}
+if(st.blade.length>8)st.blade.shift();requestAnimationFrame(loop);}
+function hit(good,r){if(good){st.score+=10;st.combo++;}else{st.lives--;st.combo=0;document.getElementById('flash').style.opacity=0.5;setTimeout(()=>document.getElementById('flash').style.opacity=0,100);if(st.lives<=0)end(false,r);}}
 
-let state = { score: 0, combo: 0, maxCombo: 0, lives: 3, active: false, start: 0, objs: [], parts: [], blade: { points: [], isDown: false }, phaseAlerted: false, totalTargets: 0 };
-let spawnTimer = null; let animId = null;
+// --- 修复部分：正确获取 Canvas 相对坐标并绑定到 Canvas 元素 ---
+function getPos(e) {
+    const rect = cvs.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+    };
+}
 
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.onresize = resize; resize();
-window.addEventListener('message', function(e) { if(e.data === 'START_GAME') startGame(); });
+// 触摸事件 (移动端)
+cvs.addEventListener('touchstart', e => {
+    e.preventDefault(); // 阻止滚动
+    st.down = true;
+    st.blade = [];
+    const p = getPos(e);
+    st.blade.push(p);
+    check(p.x, p.y);
+}, {passive: false});
 
-class Item {
-    constructor(data, isTool) {
-        this.text = data.t; this.color = data.c; this.isTool = isTool; this.r = 60; this.sliced = false;
-        this.x = Math.random() * (canvas.width * 0.8) + (canvas.width * 0.1); this.y = canvas.height + 70;
-        const targetX = canvas.width / 2 + (Math.random()-0.5) * 300; const targetY = canvas.height * 0.35; 
-        const h = this.y - targetY; const vy = Math.sqrt(2 * CFG.gravity * h); const t = vy / CFG.gravity;
-        this.vy = -vy; this.vx = (targetX - this.x) / t; this.angle = 0; this.spin = (Math.random() - 0.5) * 0.02;
+cvs.addEventListener('touchmove', e => {
+    e.preventDefault(); // 阻止滚动
+    if(st.down) {
+        const p = getPos(e);
+        st.blade.push(p);
+        check(p.x, p.y);
     }
-    update() { this.x += this.vx; this.y += this.vy; this.vy += CFG.gravity; this.vx *= CFG.drag; this.angle += this.spin; return this.y > canvas.height + 100; }
-    draw() {
-        ctx.translate(this.x, this.y); ctx.save(); ctx.rotate(this.angle);
-        ctx.beginPath(); ctx.arc(0, 0, this.r, 0, Math.PI*2); ctx.fillStyle = this.color; ctx.fill();
-        ctx.lineWidth = 4; ctx.strokeStyle = this.isTool ? '#2c3e50' : '#fff'; ctx.stroke();
-        if(this.isTool) { ctx.beginPath(); ctx.arc(0,0, this.r - 8, 0, Math.PI*2); ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.stroke(); }
-        ctx.restore(); ctx.fillStyle = '#fff'; ctx.font = 'bold 22px "Microsoft YaHei"';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.text, 0, 0); ctx.translate(-this.x, -this.y);
-    }
-}
-class Part {
-    constructor(x, y, c) { this.x = x; this.y = y; this.c = c; this.vx = (Math.random()-0.5)*10; this.vy = (Math.random()-0.5)*10; this.life = 1; }
-    update() { this.x+=this.vx; this.y+=this.vy; this.vy+=0.1; this.life-=0.02; }
-    draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.c; ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1; }
-}
+}, {passive: false});
 
-function startGame() {
-    state = { score: 0, combo: 0, maxCombo: 0, lives: 3, active: true, start: Date.now(), objs: [], parts: [], blade: { points: [], isDown: false }, phaseAlerted: false, totalTargets: 0 };
-    ui.panel.style.display = 'none'; ui.score.innerText = '0'; ui.lives.innerText = '❤️❤️❤️'; ui.combo.innerText = '0'; ui.maxCombo.innerText = '0'; ui.time.innerText = CFG.gameTime;
-    if(spawnTimer) clearTimeout(spawnTimer); if(animId) cancelAnimationFrame(animId);
-    spawn(); loop();
-}
-function updateCombo(increment) {
-    if (increment) { state.combo++; if (state.combo > state.maxCombo) { state.maxCombo = state.combo; ui.maxCombo.innerText = state.maxCombo; } ui.comboContainer.classList.remove('combo-active'); void ui.comboContainer.offsetWidth; ui.comboContainer.classList.add('combo-active'); } 
-    else { state.combo = 0; } ui.combo.innerText = state.combo;
-}
-function spawn() {
-    if(!state.active) return;
-    const passed = (Date.now() - state.start)/1000;
-    const limits = passed < CFG.safePhase ? CFG.countP1 : CFG.countP2;
-    const count = Math.floor(Math.random() * (limits[1] - limits[0] + 1)) + limits[0];
-    const existingWords = new Set(state.objs.map(o => o.text));
-    const availableBad = DATA.BAD.filter(item => !existingWords.has(item.t));
-    const availableGood = DATA.GOOD.filter(item => !existingWords.has(item.t));
-    
-    for(let i=0; i<count; i++) {
-        let isTool = passed < CFG.safePhase ? false : (Math.random() < 0.15);
-        let pool = isTool ? availableGood : availableBad;
-        if(pool.length === 0) pool = isTool ? availableBad : availableGood;
-        if(pool.length > 0) {
-            const idx = Math.floor(Math.random() * pool.length);
-            // 這裡統計總目標數：如果不是 Tool，則 totalTargets + 1
-            if(pool === availableBad) state.totalTargets++;
-            setTimeout(() => { if(state.active) state.objs.push(new Item(pool[idx], pool === availableGood)); }, i * 500);
-        }
+cvs.addEventListener('touchend', e => {
+    e.preventDefault();
+    st.down = false;
+});
+
+// 鼠标事件 (桌面端)
+window.onmousedown=e=>{st.down=true;st.blade=[];};
+window.onmousemove=e=>{
+    if(st.down){
+        st.blade.push({x:e.clientX,y:e.clientY});
+        check(e.clientX,e.clientY);
     }
-    spawnTimer = setTimeout(spawn, CFG.interval);
-}
-function takeDamage(reason) {
-    if(!state.active) return; state.lives--; updateCombo(false);
-    ui.flash.style.opacity = 0.3; setTimeout(() => ui.flash.style.opacity = 0, 100); ui.lives.innerText = "❤️".repeat(state.lives);
-    if(state.lives <= 0) over(false, reason);
-}
-function handleInput(x, y, isDown) {
-    if(!state.active) return;
-    if(isDown) { state.blade.isDown = true; state.blade.points.push({x, y}); } else { state.blade.isDown = false; state.blade.points = []; return; }
-    state.objs.forEach((o, i) => {
-        if(o.sliced) return;
-        if(Math.hypot(o.x - x, o.y - y) < o.r) {
-            o.sliced = true; for(let k=0; k<15; k++) state.parts.push(new Part(o.x, o.y, o.color));
-            if(o.isTool) { takeDamage("误伤友军"); } else { state.score += 10; updateCombo(true); ui.score.innerText = state.score; }
-            state.objs.splice(i, 1);
+};
+window.onmouseup=e=>st.down=false;
+
+function check(x,y){
+    st.objs.forEach((o,i)=>{
+        if(Math.hypot(o.x-x,o.y-y)<o.r){
+            st.objs.splice(i,1);
+            if(o.tool)hit(false,'误伤友军');
+            else hit(true);
         }
     });
 }
-function drawBlade() {
-    const pts = state.blade.points; if(pts.length < 2) return; ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    for(let i=1; i<pts.length; i++) { ctx.beginPath(); ctx.moveTo(pts[i-1].x, pts[i-1].y); ctx.lineTo(pts[i].x, pts[i].y); ctx.strokeStyle = '#00d2ff'; ctx.lineWidth = 6; ctx.stroke(); }
-    ctx.restore(); if(pts.length > 8) pts.shift();
-}
-function over(win, reason) {
-    state.active = false; ui.panel.style.display = 'block';
-    ui.title.innerText = win ? "防御成功" : "防御失败"; ui.title.style.color = win ? "#27ae60" : "#c0392b";
-    // 發送結果：包含 maxCombo 和 totalTargets
-    window.parent.postMessage({ type: 'GAME_OVER', win: win, reason: reason || "生命值耗尽", maxCombo: state.maxCombo, totalTargets: state.totalTargets }, '*');
-}
-function loop() {
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if(state.active) {
-        const passed = (Date.now() - state.start)/1000; const left = Math.max(0, CFG.gameTime - Math.floor(passed)); ui.time.innerText = left;
-        if(passed >= CFG.safePhase && !state.phaseAlerted){ state.phaseAlerted = true; window.parent.postMessage({type: 'PHASE_CHANGE'}, '*'); }
-        if(left <= 0) over(true, "任务完成");
-    }
-    for(let i=state.objs.length-1; i>=0; i--) {
-        let obj = state.objs[i];
-        if(obj.update()) { if(!obj.isTool && !obj.sliced) { takeDamage("漏掉了恶意攻击"); } state.objs.splice(i,1); } else { obj.draw(); }
-    }
-    for(let i=state.parts.length-1; i>=0; i--) { state.parts[i].update(); if(state.parts[i].life<=0) state.parts.splice(i,1); else state.parts[i].draw(); }
-    drawBlade(); animId = requestAnimationFrame(loop);
-}
-const events = { start: ['mousedown', 'touchstart'], move: ['mousemove', 'touchmove'], end: ['mouseup', 'touchend', 'mouseleave'] };
-events.start.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); const p = ev.touches ? ev.touches[0] : ev; handleInput(p.clientX, p.clientY, true); }, {passive: false}));
-events.move.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); if(state.blade.isDown) { const p = ev.touches ? ev.touches[0] : ev; handleInput(p.clientX, p.clientY, true); } }, {passive: false}));
-events.end.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); handleInput(0, 0, false); }));
-<\/script>
-</body>
-</html>
-`;
+<\/script></body></html>`;
 
-        const gameState = { step: 0, typing: false };
+        // --- 游戏 2：节奏防御 源代码 (修复移动端布局) ---
+        const GAME2_SOURCE_CODE = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        :root{--bg:#f8f9fa;--text:#212529;--hl:#fab1a0;--act:#f1c40f;--red:#e74c3c;--blue:#3498db;--green:#2ecc71;}
+        body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;user-select:none;overflow:hidden; box-sizing: border-box;}
+        
+        .hud{width:95%;max-width:800px;display:flex;justify-content:space-between;margin-bottom:10px;font-size:1.2rem;font-weight:800;color:#2c3e50; margin-top: 10px;}
+        .status-bar{width:95%;max-width:800px;height:8px;background:#dfe6e9;border-radius:4px;margin-bottom:15px;overflow:hidden;flex-shrink: 0;}
+        .status-fill{height:100%;width:0%;transition:width 0.1s linear;}
+        .status-fill.prep{background:#636e72;} .status-fill.action{background:var(--red);width:100%;}
+        
+        /* 核心修复：更紧凑的 Grid */
+        .grid-container{
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            grid-template-rows:repeat(2,1fr);
+            gap:10px;
+            width:96%;
+            max-width:900px;
+            margin-bottom:15px;
+            opacity:0.5;
+            transition:opacity 0.2s;
+            flex: 1; /* 自适应高度 */
+            max-height: 400px; /* 限制最大高度防止挤出屏幕 */
+        }
+        .grid-container.active{opacity:1;}
+        
+        .card{
+            background:#fff;border:2px solid #e9ecef;border-radius:8px;
+            display:flex;align-items:center;justify-content:center;
+            text-align:center;padding:2px;
+            box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:transform 0.1s;
+            font-size: 1rem;
+            word-break: break-all;
+        }
+        .card.target{border:4px solid var(--act);transform:scale(1.02);background:#fffdf0;z-index:10;}
+        .card.done{opacity:0.2;transform:scale(0.95);background:#ecf0f1;border-color:transparent;}
+        .card.wrong{background:var(--red);color:#fff;} .card.rhythm-hit{transform:scale(0.95);border-color:#bdc3c7;}
+        
+        .controls{display:flex;gap:10px;width:96%;max-width:800px; margin-bottom: 10px; height: 60px; flex-shrink: 0;}
+        .btn{flex:1;border:none;border-radius:10px;font-size:1rem;font-weight:bold;color:#fff;opacity:0.5;transition:0.2s; display: flex; align-items: center; justify-content: center;}
+        .controls.unlocked .btn{opacity:1;cursor:pointer;} .controls.unlocked .btn:active{transform:translateY(4px);}
+        .btn-red{background:var(--red);} .btn-blue{background:var(--blue);} .btn-green{background:var(--green);}
+        
+        #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.98);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:100;}
+
+        /* --- 移动端适配 (针对高度较小的 Iframe) --- */
+        @media (max-height: 500px), (max-width: 600px) {
+            .hud { font-size: 1rem; margin-bottom: 5px; }
+            .grid-container { gap: 6px; margin-bottom: 10px; }
+            .card { font-size: 0.85rem; border-width: 1px; border-radius: 6px; }
+            .card.target { border-width: 2px; }
+            .controls { height: 50px; }
+            .btn { font-size: 0.9rem; border-radius: 8px; }
+        }
+    </style>
+</head>
+<body>
+<div class="hud"><span>LEVEL <span id="level-num">1</span> / 5</span><span id="state-text">准备</span></div>
+<div class="status-bar"><div class="status-fill" id="status-bar"></div></div>
+<div class="grid-container" id="grid"></div>
+<div class="controls" id="controls">
+<button class="btn btn-red" onclick="inp('block')">A 拦截</button><button class="btn btn-blue" onclick="inp('antivirus')">S 查杀</button><button class="btn btn-green" onclick="inp('pass')">D 放行</button>
+</div>
+<div id="overlay"><h1 id="ov-title"></h1></div>
+<script>
+const BPM=140, BEAT=60000/BPM, LEVELS=5;
+const DATA={block:['SQL注入','DDOS','中间人'],antivirus:['木马','广告','间谍'],pass:['ctshkpcc校网']};
+let st={phase:'idle',level:1,items:[],idx:0,usedNet:false,tmr:null,btmr:null}, ac;
+const els={grid:document.getElementById('grid'),bar:document.getElementById('status-bar'),lvl:document.getElementById('level-num'),txt:document.getElementById('state-text'),ov:document.getElementById('overlay'),ctrl:document.getElementById('controls')};
+
+window.addEventListener('message',e=>{if(e.data==='START_GAME')init();});
+document.addEventListener('keydown',e=>{
+    if(st.phase==='action'){const k=e.key.toLowerCase();if(k==='a')inp('block');else if(k==='s')inp('antivirus');else if(k==='d')inp('pass');}
+    if(e.key.toLowerCase() === 'u') { next(); }
+});
+
+function init(){if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();st.level=1;st.usedNet=false;els.lvl.innerText=1;els.ov.style.display='none';start();}
+function snd(t){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();
+if(t==='w'){o.type='triangle';o.frequency.setValueAtTime(800,ac.currentTime);o.frequency.exponentialRampToValueAtTime(400,ac.currentTime+0.1);g.gain.setValueAtTime(0.5,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.01,ac.currentTime+0.1);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+0.15);}
+else{const b=ac.createBuffer(1,ac.sampleRate*0.3,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const n=ac.createBufferSource();n.buffer=b;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=600;g.gain.setValueAtTime(0,ac.currentTime);g.gain.linearRampToValueAtTime(0.2,ac.currentTime+0.05);g.gain.linearRampToValueAtTime(0,ac.currentTime+0.3);n.connect(f);f.connect(g);g.connect(ac.destination);n.start();}}
+
+function start(){
+    st.idx=0;st.items=[];els.grid.innerHTML='';els.ctrl.classList.remove('unlocked');els.grid.classList.remove('active');
+    for(let i=0;i<8;i++){
+        let type,name;const sp=!st.usedNet&&(Math.random()<0.25||st.level===5);
+        if(sp&&!st.items.some(x=>x.type==='pass')){type='pass';name=DATA.pass[0];st.usedNet=true;}
+        else{type=Math.random()>0.5?'block':'antivirus';name=DATA[type][Math.floor(Math.random()*DATA[type].length)];}
+        st.items.push({type,name});
+        const c=document.createElement('div');c.className='card';c.id='c-'+i;c.innerText=name;els.grid.appendChild(c);
+    }
+    st.phase='prep';els.txt.innerText="听节奏...";els.txt.style.color="#636e72";els.bar.style.width='0%';
+    let b=0;st.btmr=setInterval(()=>{if(b<8){snd('w');els.bar.className='status-fill prep';els.bar.style.width=((b+1)/8*100)+'%';const c=document.getElementById('c-'+b);if(c)c.classList.add('rhythm-hit');b++;}else{clearInterval(st.btmr);act();}},BEAT);
+}
+
+function act(){
+    st.phase='action';els.txt.innerText="行动！";els.txt.style.color="#e74c3c";els.ctrl.classList.add('unlocked');els.grid.classList.add('active');hl();
+    let wc=0,wt=setInterval(()=>{if(st.phase!=='action'){clearInterval(wt);return;}if(wc<8){snd('f');wc++;}else clearInterval(wt);},BEAT);
+    let startT=Date.now(),tot=BEAT*8+1000;
+    clearInterval(st.tmr);st.tmr=setInterval(()=>{let elp=Date.now()-startT,rem=tot-elp;els.bar.className='status-fill action';els.bar.style.width=(rem/tot*100)+'%';if(rem<=0){fail("时间耗尽");}},30);
+}
+
+function hl(){document.querySelectorAll('.card').forEach(c=>c.classList.remove('target'));if(st.idx<8){const c=document.getElementById('c-'+st.idx);if(c){c.classList.remove('rhythm-hit');c.classList.add('target');}}}
+function inp(t){if(st.phase!=='action'||st.idx>=8)return;const it=st.items[st.idx],c=document.getElementById('c-'+st.idx);
+if(t===it.type){c.classList.add('done');st.idx++;if(st.idx>=8)next();else hl();}else{c.classList.add('wrong');fail(t==='pass'?"放行了危险目标":"操作失误");}}
+
+function next(){
+    st.phase='res';clearInterval(st.tmr);
+    if(st.level>=LEVELS){
+        els.ov.style.display='flex';document.getElementById('ov-title').innerText="任务完成";
+        setTimeout(()=>window.parent.postMessage({type:'GAME_OVER',win:true},'*'),1000);
+    }else{st.level++;els.lvl.innerText=st.level;setTimeout(start,1000);}
+}
+
+function fail(r){
+    st.phase='res';clearInterval(st.tmr);clearInterval(st.btmr);
+    els.ov.style.display='flex';document.getElementById('ov-title').innerText="防御失败";
+    window.parent.postMessage({type:'GAME_OVER',win:false,reason:r},'*');
+}
+<\/script></body></html>`;
+
+        const gameState = { step: 0, typing: false, currentGame: 0 };
         const els = {
             speaker: document.getElementById('speaker-name'),
             text: document.getElementById('text-box'),
@@ -413,6 +478,7 @@ events.end.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); 
             gameStartMask: document.getElementById('game-start-mask'),
             gameActionBtn: document.getElementById('btn-game-action'),
             miniChar: document.getElementById('mini-char-img'),
+            miniSpeaker: document.getElementById('mini-speaker-name'),
             miniText: document.getElementById('mini-text')
         };
 
@@ -434,18 +500,16 @@ events.end.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); 
             { speaker: 'SYSTEM', text: '【鏈接中斷】茉莉 已下線,正在链接#0375', image: null },
             { speaker: '辭熒(考核官)', text: '久等了，我负责的考核内容是网络攻击手段和应对方法', image: IMG_CIYING },
             { speaker: '辭熒(考核官)', text: '你需要精准分辨病毒或攻击手段，将他们全部铲除，途中注意不要攻击友军！', image: IMG_CIYING },
-            { type: 'GAME_PREPARE' }
+            { type: 'GAME1_PREPARE' },
         ];
 
-        // --- 預加載圖片 ---
         function preloadImages() {
-            [IMG_NORMAL, IMG_RULES, IMG_CIYING].forEach(src => {
+            [IMG_NORMAL, IMG_RULES, IMG_CIYING, IMG_TWINS].forEach(src => {
                 const img = new Image();
                 img.src = src;
             });
         }
 
-        // --- 核心邏輯 ---
         function initSystem() {
             preloadImages();
             els.startOverlay.style.opacity = '0';
@@ -462,9 +526,22 @@ events.end.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); 
         function renderStep() {
             const currentScript = script[gameState.step];
             
-            if (currentScript.type === 'GAME_PREPARE') {
-                prepareMiniGame();
+            if (currentScript.type === 'GAME1_PREPARE') {
+                prepareGame(1, IMG_CIYING, "辞荧", "请准备好，考核即将开始...", GAME1_SOURCE_CODE);
                 return;
+            }
+            if (currentScript.type === 'GAME2_PREPARE') {
+                prepareGame(2, IMG_TWINS, "羽岚 & 羽晓", "听好节奏，防御即将开始...", GAME2_SOURCE_CODE);
+                return;
+            }
+
+            // 如果是文本對話，確保顯示 VN 層
+            if (!currentScript.type) {
+                // 如果 VN 層是隱藏的，確保它顯示出來
+                if (els.vnLayers.style.display === 'none') {
+                     els.vnLayers.style.display = 'block';
+                     els.vnLayers.style.opacity = '1';
+                }
             }
 
             if (currentScript.image) {
@@ -516,19 +593,21 @@ events.end.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); 
             }
         }
 
-        // --- 遊戲相關邏輯 ---
-        function prepareMiniGame() {
+        function prepareGame(gameId, charImg, speakerName, initialText, sourceCode) {
+            gameState.currentGame = gameId;
+            // 隱藏對話層
             els.vnLayers.style.opacity = '0';
             setTimeout(() => {
                 els.vnLayers.style.display = 'none';
                 els.gameWrapper.style.display = 'flex';
-                els.miniChar.src = IMG_CIYING;
-                els.gameIframe.srcdoc = GAME_SOURCE_CODE;
                 
+                els.miniChar.src = charImg;
+                els.miniSpeaker.innerText = speakerName + ":";
+                updateMiniText(initialText);
+                
+                els.gameIframe.srcdoc = sourceCode;
                 els.gameStartMask.style.display = 'flex';
                 els.gameActionBtn.innerText = "開始考核";
-                
-                updateMiniText("等待考核開始...");
             }, 500);
 
             els.progressBar.style.width = '100%';
@@ -539,14 +618,23 @@ events.end.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); 
             els.gameStartMask.style.display = 'none';
             const iframeWin = els.gameIframe.contentWindow;
             iframeWin.postMessage('START_GAME', '*');
-            updateMiniText("希望你真的做好了准备");
+            if(gameState.currentGame === 1) updateMiniText("希望你真的做好了准备");
+            else updateMiniText("集中注意力，跟上节奏！");
         }
 
         function updateMiniText(text) {
             els.miniText.innerText = text;
         }
 
-        // 監聽 iframe 傳來的消息
+        function backToVN() {
+            // 隱藏遊戲層，顯示對話層
+            els.gameWrapper.style.display = 'none';
+            els.vnLayers.style.display = 'block';
+            // 強制重繪確保 transition 生效
+            void els.vnLayers.offsetWidth; 
+            els.vnLayers.style.opacity = '1';
+        }
+
         window.addEventListener('message', function(e) {
             const data = e.data;
             if (!data.type) return;
@@ -556,39 +644,50 @@ events.end.forEach(e => canvas.addEventListener(e, ev => { ev.preventDefault(); 
             } 
             else if (data.type === 'GAME_OVER') {
                 if (!data.win) {
-                    // 失敗邏輯
-                    updateMiniText(data.reason + "，你需要重新开始考核");
+                    updateMiniText((data.reason || "考核失败") + "，你需要重新开始考核");
                     setTimeout(() => {
                         els.gameStartMask.style.display = 'flex';
                         els.gameActionBtn.innerText = "重新考核";
                     }, 500); 
-                    
                 } else {
-                    // 成功邏輯：先顯示文本
-                    updateMiniText("表现不错，威胁清除");
-                    
-                    // 2秒後跳轉回 VN 模式
-                    setTimeout(() => {
-                        // 1. 隱藏遊戲，顯示對話層
-                        els.gameWrapper.style.display = 'none';
-                        els.vnLayers.style.display = 'block';
-                        els.vnLayers.style.opacity = '1'; // 確保透明度恢復
+                    if (gameState.currentGame === 1) {
+                        updateMiniText("表现不错，威胁清除");
+                        setTimeout(() => {
+                            // 1. 切換回對話模式
+                            backToVN();
+                            
+                            // 2. 準備劇本
+                            const isPerfect = (data.maxCombo === data.totalTargets) && (data.totalTargets > 0);
+                            const resultText = isPerfect 
+                                ? "恭喜你完美通过了本次考核，你可以去找下一个考官了" 
+                                : "且算已通过的本次考核，你可以去找下一个考官了";
+                            
+                            // 插入後續對話
+                            script.splice(gameState.step + 1, 0, 
+                                { speaker: '辭熒(考核官)', text: resultText, image: IMG_CIYING },
+                                { speaker: 'SYSTEM', text: '正在跳转#7098', image: null },
+                                { speaker: '羽岚 & 羽晓', text: '你好考生通过我们的考验你就能完成考验,成为一名执法人员了!', image: IMG_TWINS },
+                                { type: 'GAME2_PREPARE' }
+                            );
 
-                        // 2. 判斷是否完美通關 (連擊數 = 總目標數)
-                        const isPerfect = (data.maxCombo === data.totalTargets) && (data.totalTargets > 0);
-                        const resultText = isPerfect 
-                            ? "恭喜你完美通过了本次考核，你可以去找下一个考官了" 
-                            : "且算已通过的本次考核，你可以去找下一个考官了";
+                            // 3. 手動推進一步並強制渲染，確保不會因為 display:none 被跳過
+                            gameState.step++;
+                            setTimeout(renderStep, 100); 
 
-                        // 3. 將新的劇本插入隊列並執行
-                        // 因為當前 step 停在 GAME_PREPARE，我們直接追加新內容
-                        script.push({ speaker: '辭熒(考核官)', text: resultText, image: IMG_CIYING });
-                        script.push({ speaker: 'SYSTEM', text: '正在跳转#7098', image: null });
+                        }, 2000);
 
-                        // 4. 手動觸發下一步
-                        nextStep(); 
-
-                    }, 2000);
+                    } else if (gameState.currentGame === 2) {
+                        updateMiniText("节奏完美，防御成功！");
+                        setTimeout(() => {
+                            backToVN();
+                            script.splice(gameState.step + 1, 0, 
+                                { speaker: '羽岚 & 羽晓', text: '恭喜你！欢迎加入 N.S.B.，新的执法者。', image: IMG_TWINS },
+                                { speaker: 'SYSTEM', text: '【考核结束】档案录入完成。', image: null }
+                            );
+                            gameState.step++;
+                            setTimeout(renderStep, 100);
+                        }, 2000);
+                    }
                 }
             }
         });
