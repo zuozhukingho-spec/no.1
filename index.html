@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>N.S.B. 內部安全審查系統</title>
+    <title>H.K.P.C.执法官考核</title>
     <style>
         /* --- 1. 視覺核心 --- */
         :root {
@@ -174,7 +174,7 @@
 <body>
 
     <div class="top-hud">
-        <div class="logo-area"><span>🛡️</span> <span>N.S.B. 考核系統</span></div>
+        <div class="logo-area"><span>🛡️</span> <span>H.K.P.C.考核系統</span></div>
         <div class="progress-module">
             <span style="font-size: 0.85rem;">進度</span>
             <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
@@ -215,7 +215,7 @@
     </div>
 
     <div id="start-overlay" class="overlay">
-        <h1 style="color: var(--police-dark);">🛡️ N.S.B. 入職考核</h1>
+        <h1 style="color: var(--police-dark);">H.K.P.C.考核系統</h1>
         <button class="btn-start" onclick="initSystem()">開始鏈接</button>
     </div>
 
@@ -499,7 +499,7 @@ function fail(r){
             { speaker: '茉莉(培訓官)', text: '说了这么多时间差点过了关于 社交工程 的案例,希望你一会在考核中就不要错了,现在跳转到#0375就可以开始考核了~', image: IMG_NORMAL },
             { speaker: 'SYSTEM', text: '【鏈接中斷】茉莉 已下線,正在链接#0375', image: null },
             { speaker: '辭熒(考核官)', text: '久等了，我负责的考核内容是网络攻击手段和应对方法', image: IMG_CIYING },
-            { speaker: '辭熒(考核官)', text: '你需要精准分辨病毒或攻击手段，将他们全部铲除，途中注意不要攻击友军！', image: IMG_CIYING },
+            { speaker: '辭熒(考核官)', text: '你需要精准分辨病毒或攻击手段，将他们全部铲除！（滑動屏幕或者遊标），途中注意不要攻击友军！', image: IMG_CIYING },
             { type: 'GAME1_PREPARE' },
         ];
 
@@ -695,7 +695,7 @@ function fail(r){
                         setTimeout(() => {
                             backToVN();
                             script.splice(gameState.step + 1, 0, 
-                                { speaker: '羽岚 & 羽晓', text: '恭喜你！欢迎加入 N.S.B.，新的执法者。', image: IMG_TWINS },
+                                { speaker: '羽岚 & 羽晓', text: '恭喜你！欢迎加入 HKPC，新的执法者。', image: IMG_TWINS },
                                 { speaker: 'SYSTEM', text: '【考核结束】档案录入完成。', image: null }
                             );
                             gameState.step++;
@@ -708,3 +708,4 @@ function fail(r){
     </script>
 </body>
 </html>
+
